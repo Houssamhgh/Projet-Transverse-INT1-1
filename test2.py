@@ -8,8 +8,8 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
 # Game Configuration
-GRAVITY = 0.5
-MOVE_FORCE = 0.5  # Left/right movement force
+GRAVITY = 0.3
+MOVE_FORCE = 0.3  # Left/right movement force
 DAMPING = 0.98  # Velocity damping for realistic motion
 SPACE_BETWEEN_ROPES = 300  # Distance between ropes
 CAMERA_OFFSET = WIDTH // 3  # Camera follows the player smoothly
@@ -30,7 +30,6 @@ class Rope:
         """ Sets the rope length dynamically based on ball position."""
         self.length = (ball.pos - self.anchor).length()
         ball.is_attached, ball.attached_rope = True, self
-        ball.velocity = pygame.Vector2(0, 0)  # Reset velocity
 
     def update(self, ball):
         if ball.is_attached and ball.attached_rope == self:
