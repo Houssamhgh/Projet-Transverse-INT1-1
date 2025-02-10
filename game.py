@@ -19,6 +19,8 @@ IN_AIR = 0  # Represents the state of the player being in the air
 
 # Game States
 game_over = False
+score = 0  # Initialize the score
+score_increased = False  # Flag to track if the score has been increased
 
 
 class Rope:
@@ -30,7 +32,6 @@ class Rope:
         """ Sets the rope length dynamically based on ball position."""
         self.length = (ball.pos - self.anchor).length()
         ball.is_attached, ball.attached_rope = True, self
-        #ball.velocity = pygame.Vector2(0, 0)  # Reset velocity
 
     def update(self, ball):
         if ball.is_attached and ball.attached_rope == self:
@@ -144,10 +145,24 @@ while running:
     # Remove out-of-view ropes
     ropes = [rope for rope in ropes if rope.anchor.x - camera_x > -150]
 
+    # Increment score only when ball attaches to a rope and hasn't been increased yet
+    if ball.is_attached and ball.attached_rope and not score_increased:
+        score += 1  # Increase the score
+        score_increased = True  # Set flag to prevent multiple increments
+
+    # Reset the score flag if the ball gets detached
+    if not ball.is_attached:
+        score_increased = False
+
     # Render objects
     for rope in ropes:
         rope.draw(screen, ball, camera_x)
     ball.draw(screen, camera_x)
+
+    # Display the score
+    font = pygame.font.Font(None, 36)
+    score_text = font.render(f'Score: {score}', True, (255, 255, 255))
+    screen.blit(score_text, (10, 10))  # Display score at top-left corner
 
     # Update the display
     pygame.display.flip()
