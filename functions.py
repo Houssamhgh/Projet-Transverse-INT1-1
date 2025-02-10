@@ -81,7 +81,7 @@ class Ball:
 
 
 # Create Objects
-ball = Ball(WIDTH // 2, HEIGHT // 2)
+ball = Ball(WIDTH // 10, HEIGHT // 10)
 ropes = [Rope(WIDTH // 2 + i * SPACE_BETWEEN_ROPES, HEIGHT // 4 + random.randint(-50, 50)) for i in range(5)]
 
 running = True
