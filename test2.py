@@ -1,21 +1,18 @@
-import pygame
 import random
+import pygame
 
 # Pygame Initialization
 pygame.init()
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-clock = pygame.time.Clock()
 
 # Game Configuration
-GRAVITY = 0.3
+MASS = 0.008
+GRAVITATIONAL_CONST = 9.81
+GRAVITY = MASS * GRAVITATIONAL_CONST
 MOVE_FORCE = 0.3  # Left/right movement force
-DAMPING = 0.98  # Velocity damping for realistic motion
 SPACE_BETWEEN_ROPES = 300  # Distance between ropes
 CAMERA_OFFSET = WIDTH // 3  # Camera follows the player smoothly
-JUMP_FORCE = -10  # Jumping force when the player presses space
-ON_GROUND = 1  # Represents the state of the player being on the ground
-IN_AIR = 0  # Represents the state of the player being in the air
 
 # Game States
 game_over = False
@@ -42,7 +39,7 @@ class Rope:
         if ball.is_attached and ball.attached_rope == self:
             pygame.draw.line(screen, (255, 255, 255),
                              (self.anchor.x - camera_x, self.anchor.y),
-                             (ball.pos.x - camera_x, ball.pos.y), 3)
+                             (ball.pos.x - camera_x, ball.pos.y), 1)
         pygame.draw.circle(screen, (0, 255, 0), (self.anchor.x - camera_x, self.anchor.y), 6)
 
 
@@ -50,42 +47,28 @@ class Ball:
     def __init__(self, x, y, radius=10):
         self.pos = pygame.Vector2(x, y)
         self.radius = radius
-        self.velocity = pygame.Vector2(0, 0)
+        self.velocity = pygame.Vector2(5, 0)
         self.is_attached = False
         self.attached_rope = None
-        self.state = ON_GROUND  # Start on the ground
 
-    def update(self, keys):
-        if self.is_attached and self.attached_rope:
-            if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-                self.velocity.x -= MOVE_FORCE
-            if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-                self.velocity.x += MOVE_FORCE
-            self.velocity.y += GRAVITY * 0.3  # Light gravity effect while swinging
+    def update(self, keys, ropes):
+        if keys[pygame.K_SPACE]:  # Attach to rope when space is pressed
+            if not self.is_attached:  # If not already attached
+                closest_rope = min(ropes, key=lambda rope: abs(rope.anchor.x - self.pos.x))
+                closest_rope.attach(self)
         else:
-            self.velocity.y += GRAVITY  # Normal gravity when detached
-
-        # Handle jumping
-        if self.state == ON_GROUND and (keys[pygame.K_SPACE] or keys[pygame.K_w]):
-            self.velocity.y = JUMP_FORCE  # Apply a jump force
-            self.state = IN_AIR  # The ball is in the air now
-
-        self.pos += self.velocity
-        self.velocity *= DAMPING  # Apply damping for smooth motion
-
-        # Check for ground collision (bottom of the screen)
-        if self.pos.y >= HEIGHT - self.radius:
-            self.pos.y = HEIGHT - self.radius  # Stop at the bottom
-            self.velocity.y = 0  # Stop downward velocity
-            self.state = ON_GROUND  # Back to the ground
-
-    def toggle_attachment(self, ropes):
-        if self.is_attached:
             self.is_attached = False
             self.attached_rope = None
-        else:
-            closest_rope = min(ropes, key=lambda rope: abs(rope.anchor.x - self.pos.x))
-            closest_rope.attach(self)
+
+        if not self.is_attached:
+            self.velocity.y += GRAVITY  # Gravity
+
+        self.pos += self.velocity
+
+        # Collision with the ground (game over condition)
+        if self.pos.y >= HEIGHT - self.radius:
+            self.pos.y = HEIGHT - self.radius
+            self.velocity.y = 0
 
     def draw(self, screen, camera_x):
         pygame.draw.circle(screen, (0, 0, 255), (self.pos.x - camera_x, self.pos.y), self.radius)
@@ -122,12 +105,10 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-            ball.toggle_attachment(ropes)
 
     # Update game state
-    ball.update(keys)
-    camera_x = max(camera_x, ball.pos.x - CAMERA_OFFSET)
+    ball.update(keys, ropes)
+    camera_x = ball.pos.x - CAMERA_OFFSET  # Camera follows the ball
 
     # Check for ball hitting the bottom (game over condition)
     if ball.pos.y >= HEIGHT - ball.radius:
@@ -152,6 +133,6 @@ while running:
     pygame.display.flip()
 
     # Limiting frame rate
-    clock.tick(60)
+    pygame.time.Clock().tick(60)
 
 pygame.quit()
