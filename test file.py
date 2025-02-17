@@ -124,7 +124,7 @@ def generate_platforms():
         Platform(200, 400, 150, 20),
         Platform(2000, 500, 200, 20),
         Platform(2300, 400, 150, 20),
-        Platform(2500, 400, 100, 20)
+        Platform(3000, 400, 100, 20)
     ]
 
 
