@@ -26,7 +26,6 @@ def render_text(text, font, color, x, y):
     text_rect = text_surface.get_rect(center=(x, y))
     screen.blit(text_surface, text_rect)
 
-
 class Spider:
     def __init__(self):
         self.x = random.randint(0, screen_width)
@@ -72,7 +71,7 @@ def draw_button(text, x, y, width, height, color, action=None):
     mouse_pos = pygame.mouse.get_pos()
     mouse_click = pygame.mouse.get_pressed()
 
-    # Vérifier si la souris est sur le bouton
+    # Vérifie si la souris est au-dessus du bouton
     if x < mouse_pos[0] < x + width and y < mouse_pos[1] < y + height:
         pygame.draw.rect(screen, BLUE, (x, y, width, height))
         if mouse_click[0] == 1 and action is not None:
@@ -80,40 +79,38 @@ def draw_button(text, x, y, width, height, color, action=None):
     else:
         pygame.draw.rect(screen, color, (x, y, width, height))
 
-    # Calculer la position pour centrer le texte dans le bouton
-    text_surface = small_font.render(text, True, WHITE)
-    text_rect = text_surface.get_rect(center=(x + width // 2, y + height // 2))
-    screen.blit(text_surface, text_rect)
-
+    render_text(text, small_font, WHITE, x + width // 2, y + height // 2)
 
 def start_game():
     global game_state
     game_state = "playing"
-
-
 def load_game():
     global game_state, input_text
     game_state = "load_game"
     input_text = ""
-
 def settings():
     global game_state
     game_state = "settings"
-
+    print("Navigating to settings menu.")
 def music_settings():
     global game_state
     game_state = "music_settings"
-
 def toggle_music():
     global music_on
     music_on = not music_on
     print("Musique:", "Activée" if music_on else "Désactivée")
-
+    if music_on:
+        pass
+    else:
+        pass
 def toggle_sounds():
     global sounds_on
     sounds_on = not sounds_on
     print("Sons:", "Activés" if sounds_on else "Désactivés")
-
+    if sounds_on:
+        pass
+    else:
+        pass
 def change_music(track):
     global selected_music
     selected_music = track
@@ -122,31 +119,31 @@ def change_music(track):
 def menu():
     screen.fill(background_color)
     draw_spider_web()
-
-    # Centrer le titre "Spidey Hook"
     title_text = "Spidey Hook"
     title_surface = font.render(title_text, True, RED)
     title_rect = title_surface.get_rect(center=(screen_width // 2, 100))
     screen.blit(title_surface, title_rect)
-
-    # Centrer les boutons du menu
     draw_button("Start Game", screen_width // 2 - 100, 200, 200, 50, GRAY, start_game)
     draw_button("Load Game", screen_width // 2 - 100, 300, 200, 50, GRAY, load_game)
     draw_button("Settings", screen_width // 2 - 100, 400, 200, 50, GRAY, settings)
-
-    # Faire bouger les araignées
     for spider in spiders:
         spider.move()
         spider.draw()
-
 def settings_menu():
     screen.fill(background_color)
-    render_text("Settings", font, RED, screen_width // 2, 100)
-
-    draw_button(f"Music: {'On' if music_on else 'Off'}", 200, 200, 200, 50, GRAY, toggle_music)
-    draw_button(f"Sounds: {'On' if sounds_on else 'Off'}", 200, 300, 200, 50, GRAY, toggle_sounds)
-    draw_button("Change Music", 200, 400, 200, 50, GRAY, music_settings)
-    draw_button("Back", 200, 500, 200, 50, GRAY, lambda: set_state("menu"))
+    settings_text = "Settings"
+    render_text(settings_text, font, RED, screen_width // 2, 100)
+    button_width = 200
+    button_height = 50
+    button_x = screen_width // 2 - button_width // 2
+    button_y = 200
+    draw_button(f"Music: {'On' if music_on else 'Off'}", button_x, button_y, button_width, button_height, GRAY, toggle_music)
+    button_y += button_height + 10
+    draw_button(f"Sounds: {'On' if sounds_on else 'Off'}", button_x, button_y, button_width, button_height, GRAY, toggle_sounds)
+    button_y += button_height + 10
+    draw_button("Change Music", button_x, button_y, button_width, button_height, GRAY, music_settings)
+    button_y += button_height + 10
+    draw_button("Back", button_x, button_y, button_width, button_height, GRAY, lambda: set_state("menu"))
 
 def music_selection_menu():
     screen.fill(background_color)
@@ -159,30 +156,19 @@ def music_selection_menu():
 def load_game_screen():
     global input_text
     screen.fill(background_color)
-
-    # Centrer le titre "Enter your name"
     render_text("Enter your name:", font, RED, screen_width // 2, 100)
-
-    # Message d'indication centré
     render_text("Please enter your name and press Enter", small_font, WHITE, screen_width // 2, 160)
-
-    # Créer une boîte de saisie pour le nom et la centrer
     input_box = pygame.Rect(screen_width // 2 - 100, 200, 200, 40)
     pygame.draw.rect(screen, GRAY, input_box)
-    render_text(input_text, small_font, WHITE, screen_width // 2, 215)  # Centrer le texte
-
-    # Classement centré
+    render_text(input_text, small_font, WHITE, screen_width // 2, 215)
     render_text("Leaderboard:", small_font, WHITE, screen_width // 2, 300)
     render_text("No scores yet.", small_font, WHITE, screen_width // 2, 350)
-
-    # Boutons centrés
     draw_button("Confirm", screen_width // 2, 450, 200, 50, GRAY, lambda: set_state("playing"))
     draw_button("Back", screen_width // 2, 520, 200, 50, GRAY, lambda: set_state("menu"))
 
 def set_state(state):
     global game_state
     game_state = state
-
 def main_loop():
     global game_state, input_text
     clock = pygame.time.Clock()
@@ -192,13 +178,6 @@ def main_loop():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif game_state == "load_game" and event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN:
-                    set_state("playing")
-                elif event.key == pygame.K_BACKSPACE:
-                    input_text = input_text[:-1]
-                else:
-                    input_text += event.unicode
 
         if game_state == "menu":
             menu()
@@ -218,6 +197,7 @@ def main_loop():
 
     pygame.quit()
     sys.exit()
+
 
 if __name__ == "__main__":
     main_loop()
