@@ -1,5 +1,6 @@
 import pygame
 import random
+import math
 
 # Pygame Initialization
 pygame.init()
@@ -30,6 +31,8 @@ class Rope:
         """ Sets the rope length dynamically based on ball position."""
         self.length = (ball.pos - self.anchor).length()
         ball.is_attached, ball.attached_rope = True, self
+        # Store the initial velocity magnitude when attached
+        ball.initial_velocity = ball.velocity.length()
 
     def update(self, ball):
         if ball.is_attached and ball.attached_rope == self:
@@ -54,6 +57,7 @@ class Ball:
         self.is_attached = False
         self.attached_rope = None
         self.state = ON_GROUND  # Start on the ground
+        self.initial_velocity = 0  # Stores the velocity magnitude when attached
 
     def update(self, keys, platforms):
         if keys[pygame.K_SPACE]:  # Attach to rope when space is pressed
@@ -64,12 +68,21 @@ class Ball:
             self.is_attached = False
             self.attached_rope = None
 
-        if not self.is_attached:
+        if self.is_attached:
+            # Pendulum motion with constant velocity
+            direction = self.pos - self.attached_rope.anchor
+            distance = direction.length()
+            if distance > 0:
+                direction.normalize_ip()
+                # Calculate the tangent vector
+                tangent = pygame.Vector2(-direction.y, direction.x)
+                # Maintain the initial velocity magnitude
+                self.velocity = tangent * self.initial_velocity
+                # Update position
+                self.pos += self.velocity
+        else:
             self.velocity.y += GRAVITY  # Gravity
-
-
-        self.pos += self.velocity
-
+            self.pos += self.velocity
 
         # Check for ground collision (bottom of the screen)
         if self.pos.y >= HEIGHT - self.radius:
@@ -84,14 +97,6 @@ class Ball:
                     self.velocity.y = -self.velocity.y * 0.8  # Reverse velocity and apply some dampening
                     self.pos.y = platform.rect.top - self.radius  # Move ball on top of the platform
                     self.state = ON_GROUND  # The ball is on the ground again
-
-    def toggle_attachment(self, ropes):
-        if self.is_attached:
-            self.is_attached = False
-            self.attached_rope = None
-        else:
-            closest_rope = min(ropes, key=lambda rope: abs(rope.anchor.x - self.pos.x))
-            closest_rope.attach(self)
 
     def draw(self, screen, camera_x):
         pygame.draw.circle(screen, (0, 0, 255), (self.pos.x - camera_x, self.pos.y), self.radius)
@@ -115,8 +120,6 @@ def generate_platforms():
     return [
         Platform(100, 400, 150, 20),
         Platform(300, 400, 200, 20),
-        #Platform(700, 300, 30, 700),
-        #Platform(1200, 400, 100, 20),
         Platform(200, 400, 150, 20),
         Platform(2000, 500, 200, 20),
         Platform(2300, 400, 150, 20),
