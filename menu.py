@@ -179,12 +179,8 @@ def load_game_screen():
     input_box = pygame.Rect(screen_width // 2 - 100, 200, 200, 40)
     pygame.draw.rect(screen, GRAY, input_box)
     render_text(input_text, small_font, WHITE, screen_width // 2, 215)  # Centrer le texte
-
-    # Classement centré
     render_text("Leaderboard:", small_font, WHITE, screen_width // 2, 300)
     render_text("No scores yet.", small_font, WHITE, screen_width // 2, 350)
-
-    # Boutons centrés
     button_width = 200
     draw_button("Confirm", screen_width - button_width - 20, 450, button_width, 50, GRAY, lambda: set_state("playing"))
     draw_button("Back", screen_width - button_width - 20, 520, button_width, 50, GRAY, lambda: set_state("menu"))
