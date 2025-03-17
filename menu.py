@@ -82,7 +82,7 @@ def draw_button(text, x, y, width, height, color, action=None):
 
     # Calculer la position pour centrer le texte dans le bouton
     text_surface = small_font.render(text, True, WHITE)
-    text_rect = text_surface.get_rect(center=(x + width // 2, y + height // 2))
+    text_rect = text_surface.get_rect(center=(x + width // 2, y + height // 2))  # Centrer le texte dans le bouton
     screen.blit(text_surface, text_rect)
 
 
@@ -114,6 +114,21 @@ def toggle_sounds():
     sounds_on = not sounds_on
     print("Sons:", "Activés" if sounds_on else "Désactivés")
 
+
+def draw_button(text, x, y, width, height, color, action):
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+
+    button_rect = pygame.Rect(x, y, width, height)
+
+    if button_rect.collidepoint(mouse):
+        if click[0] == 1:  # Si le bouton gauche est enfoncé
+            pygame.time.wait(200)  # Attendre pour éviter les clics multiples
+            action()  # Exécute l'action
+
+    pygame.draw.rect(screen, color, button_rect)
+    render_text(text, small_font, (255, 255, 255), x + width // 2, y + height // 2)
+
 def change_music(track):
     global selected_music
     selected_music = track
@@ -126,13 +141,13 @@ def menu():
     # Centrer le titre "Spidey Hook"
     title_text = "Spidey Hook"
     title_surface = font.render(title_text, True, RED)
-    title_rect = title_surface.get_rect(center=(screen_width // 2, 100))
+    title_rect = title_surface.get_rect(center=(screen_width // 2, 100))  # Centrer le texte horizontalement
     screen.blit(title_surface, title_rect)
 
     # Centrer les boutons du menu
     draw_button("Start Game", screen_width // 2 - 100, 200, 200, 50, GRAY, start_game)
     draw_button("Load Game", screen_width // 2 - 100, 300, 200, 50, GRAY, load_game)
-    draw_button("Settings", screen_width // 2 - 100, 400, 200, 50, GRAY, settings)
+    draw_button("Settings", 20, screen_height-70, 200, 50, GRAY, settings)
 
     # Faire bouger les araignées
     for spider in spiders:
@@ -141,30 +156,39 @@ def menu():
 
 def settings_menu():
     screen.fill(background_color)
-    render_text("Settings", font, RED, screen_width // 2, 100)
+    render_text("Settings", font, RED, screen_width // 2, 100)  # Centré avec render_text
 
+    # Aligner les boutons et les textes avec le titre
     button_width = 200
-    draw_button(f"Music: {'On' if music_on else 'Off'}", screen_width // 2 - button_width // 2, 200, button_width, 50,
-                GRAY, toggle_music)
-    draw_button(f"Sounds: {'On' if sounds_on else 'Off'}", screen_width // 2 - button_width // 2, 300, button_width, 50,
-                GRAY, toggle_sounds)
-    draw_button("Change Music", screen_width // 2 - button_width // 2, 400, button_width, 50, GRAY, music_settings)
-    button_width = 200
-    draw_button("Back", screen_width - button_width - 20, 500, button_width, 50, GRAY, lambda: set_state("menu"))
+    button_height = 50
+    button_x = screen_width // 2 - button_width // 2  # Centrer les boutons par rapport à l'écran
+
+    draw_button(f"Music: {'On' if music_on else 'Off'}", button_x, 200, button_width, button_height, GRAY, toggle_music)
+    draw_button(f"Sounds: {'On' if sounds_on else 'Off'}", button_x, 300, button_width, button_height, GRAY, toggle_sounds)
+    draw_button("Change Music", button_x, 400, button_width, button_height, GRAY, music_settings)
+    draw_button("Back", button_x, 500, button_width, button_height, GRAY, lambda: set_state("menu"))
 
 def music_selection_menu():
     screen.fill(background_color)
-    render_text("Select Music Track", font, RED, screen_width // 2, 100)
+
+    # Centrer le titre "Select Music Track"
+    render_text("Select Music Track", font, RED, screen_width // 2, 100)  # Centré avec render_text
+
+    # Centrer le texte "Current Music"
     render_text(f"Current Music: {selected_music}", small_font, WHITE, screen_width // 2, 150)
+
+    # Définir la largeur des boutons et la hauteur pour les centrer
     button_width = 200
-    draw_button("Track 1", screen_width // 2 - button_width // 2, 250, button_width, 50, GRAY,
-                lambda: change_music("Track 1"))
-    draw_button("Track 2", screen_width // 2 - button_width // 2, 320, button_width, 50, GRAY,
-                lambda: change_music("Track 2"))
-    draw_button("Track 3", screen_width // 2 - button_width // 2, 390, button_width, 50, GRAY,
-                lambda: change_music("Track 3"))
-    button_width = 200
-    draw_button("Back", screen_width - button_width - 20, 500, button_width, 50, GRAY, lambda: set_state("settings"))
+    button_height = 50
+    button_x = screen_width // 2 - button_width // 2  # Centrer horizontalement les boutons
+
+    # Centrer les boutons
+    draw_button("Track 1", button_x, 250, button_width, button_height, GRAY, lambda: change_music("Track 1"))
+    draw_button("Track 2", button_x, 320, button_width, button_height, GRAY, lambda: change_music("Track 2"))
+    draw_button("Track 3", button_x, 390, button_width, button_height, GRAY, lambda: change_music("Track 3"))
+    draw_button("Back", button_x, 460, button_width, button_height, GRAY, lambda: set_state("settings"))
+
+
 def load_game_screen():
     global input_text
     screen.fill(background_color)
@@ -179,11 +203,14 @@ def load_game_screen():
     input_box = pygame.Rect(screen_width // 2 - 100, 200, 200, 40)
     pygame.draw.rect(screen, GRAY, input_box)
     render_text(input_text, small_font, WHITE, screen_width // 2, 215)  # Centrer le texte
+
+    # Classement centré
     render_text("Leaderboard:", small_font, WHITE, screen_width // 2, 300)
     render_text("No scores yet.", small_font, WHITE, screen_width // 2, 350)
-    button_width = 200
-    draw_button("Confirm", screen_width - button_width - 20, 450, button_width, 50, GRAY, lambda: set_state("playing"))
-    draw_button("Back", screen_width - button_width - 20, 520, button_width, 50, GRAY, lambda: set_state("menu"))
+
+    # Boutons centrés
+    draw_button("Confirm", screen_width-220, 450, 200, 50, GRAY, lambda: set_state("playing"))
+    draw_button("Back", screen_width-220, screen_height-70, 200, 50, GRAY, lambda: set_state("menu"))
 
 def set_state(state):
     global game_state
