@@ -9,7 +9,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
 # Game Configuration
-MASS = 0.005
+MASS = 0.05
 GRAVITATIONAL_CONST = 9.81
 GRAVITY = MASS * GRAVITATIONAL_CONST
 SPACE_BETWEEN_ROPES = 300  # Distance between ropes
@@ -53,11 +53,11 @@ class Ball:
     def __init__(self, x, y, radius=10):
         self.pos = pygame.Vector2(x, y)
         self.radius = radius
-        self.velocity = pygame.Vector2(5, -5)
+        self.velocity = pygame.Vector2(8 , 5)  # Start with zero velocity
         self.is_attached = False
         self.attached_rope = None
         self.state = ON_GROUND  # Start on the ground
-        self.initial_velocity = 0  # Stores the velocity magnitude when attached
+        self.mass = 1.0  # Mass of the ball (for physics)
 
     def update(self, keys, platforms):
         if keys[pygame.K_SPACE]:  # Attach to rope when space is pressed
@@ -69,17 +69,27 @@ class Ball:
             self.attached_rope = None
 
         if self.is_attached:
-            # Pendulum motion with constant velocity
+            # Pendulum physics
             direction = self.pos - self.attached_rope.anchor
             distance = direction.length()
             if distance > 0:
                 direction.normalize_ip()
-                # Calculate the tangent vector
+                # Calculate the angle theta between the rope and the vertical
+                theta = math.atan2(direction.x, direction.y)
+                # Calculate the tangential force (F_t = m * g * sin(theta))
+                force_tangential = self.mass * GRAVITY * math.sin(theta)
+                # Update velocity based on the tangential force
                 tangent = pygame.Vector2(-direction.y, direction.x)
-                # Maintain the initial velocity magnitude
-                self.velocity = tangent * self.initial_velocity
+                self.velocity += tangent * force_tangential
                 # Update position
                 self.pos += self.velocity
+                # Correct the position to maintain rope length
+                current_distance = (self.pos - self.attached_rope.anchor).length()
+                if abs(current_distance - self.attached_rope.length) > 1:  # Allow a small tolerance
+                    correction = direction * (self.attached_rope.length - current_distance)
+                    self.pos += correction
+                    # Adjust velocity to prevent drifting
+                    self.velocity -= direction * direction.dot(self.velocity)
         else:
             self.velocity.y += GRAVITY  # Gravity
             self.pos += self.velocity
@@ -93,10 +103,12 @@ class Ball:
         # Collision with platforms (bounce)
         for platform in platforms:
             if platform.rect.colliderect(pygame.Rect(self.pos.x - self.radius, self.pos.y - self.radius, self.radius * 2, self.radius * 2)):
-                if self.velocity.y > 0:  # Only bounce when falling
-                    self.velocity.y = -self.velocity.y * 0.8  # Reverse velocity and apply some dampening
-                    self.pos.y = platform.rect.top - self.radius  # Move ball on top of the platform
-                    self.state = ON_GROUND  # The ball is on the ground again
+                self.velocity.y = -self.velocity.y * 1.3  # Reverse velocity and apply some dampening
+                #self.pos.y = platform.rect.top - self.radius  # Move ball on top of the platform
+                self.state = ON_GROUND  # The ball is on the ground again
+                ball.is_attached = False
+
+
 
     def draw(self, screen, camera_x):
         pygame.draw.circle(screen, (0, 0, 255), (self.pos.x - camera_x, self.pos.y), self.radius)
@@ -118,11 +130,11 @@ def generate_rope_chain():
 def generate_platforms():
     """ Creates some platforms in the game."""
     return [
-        Platform(100, 400, 150, 20),
+        Platform(100, 400, 150, 10),
         Platform(300, 400, 200, 20),
         Platform(200, 400, 150, 20),
-        Platform(2000, 500, 200, 20),
-        Platform(2300, 400, 150, 20),
+        Platform(800, 500, 200, 10),
+        Platform(1000, 400, 150, 20),
         Platform(3000, 400, 100, 20)
     ]
 
@@ -160,7 +172,7 @@ while running:
     camera_x = ball.pos.x - CAMERA_OFFSET
 
     # Check for ball hitting the bottom (game over condition)
-    if ball.pos.y >= HEIGHT - ball.radius:
+    if ball.pos.y >= HEIGHT - ball.radius :
         game_over = True
 
     for rope in ropes:
@@ -170,8 +182,6 @@ while running:
     if ropes[-1].anchor.x - camera_x < WIDTH:
         ropes.append(Rope(ropes[-1].anchor.x + SPACE_BETWEEN_ROPES, HEIGHT // 4 + random.randint(-50, 50)))
 
-    # Remove out-of-view ropes
-    ropes = [rope for rope in ropes if rope.anchor.x - camera_x > -150]
 
     # Increment score only when ball attaches to a rope and hasn't been increased yet
     if ball.is_attached and ball.attached_rope and not score_increased:
