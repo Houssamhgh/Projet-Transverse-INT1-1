@@ -244,7 +244,7 @@ def generate_platforms():
     ]
 def generate_slopes():
     return[
-        SlopedPlatform(350, 300, 600, 400),  # pente vers la droite
+        SlopedPlatform(350, 300, 600, 400),
         SlopedPlatform(350, 100, 350,300 ),
         SlopedPlatform(4000,300, 4000, 400 ),
     ]
@@ -299,15 +299,14 @@ def set_state(state):
     game_state = state
 
 def start_game():
-    global game_state, ball, ropes, platforms, slopes, camera_x, score, score_increased
+    global game_state, ball, ropes, platforms, slopes, camera_x,finish_line
     game_state = "playing"
     ball = Ball(WIDTH // 2, HEIGHT // 2)
     ropes = generate_rope_chain()
     platforms = generate_platforms()
     slopes = generate_slopes()
     camera_x = 0
-    score = 0
-    score_increased = False
+    finish_line = pygame.Rect(4200,0,20,HEIGHT)
 
 def menu_screen():
     screen.fill(BLACK)
@@ -363,18 +362,20 @@ def game_screen():
     if ball.pos.y >= HEIGHT - ball.radius or ball.is_alive==False:
         game_state = "game_over"
 
+    # Crée un rectangle représentant la balle
+    ball_rect = pygame.Rect(ball.pos.x - ball.radius, ball.pos.y - ball.radius,
+                            ball.radius * 2, ball.radius * 2)
+
+    # Vérifie la collision avec la ligne d'arrivée
+    if ball_rect.colliderect(finish_line):
+        game_state = "win_level"
+
     for rope in ropes:
         rope.update(ball)
 
     if ropes[-1].anchor.x - camera_x < WIDTH:
         ropes.append(Rope(ropes[-1].anchor.x + SPACE_BETWEEN_ROPES, HEIGHT // 4 + random.randint(-50, 50)))
 
-    if ball.is_attached and ball.attached_rope and not score_increased:
-        score += 1
-        score_increased = True
-
-    if not ball.is_attached:
-        score_increased = False
 
     screen.fill(BLACK)
     for rope in ropes:
@@ -387,25 +388,27 @@ def game_screen():
     for slope in slopes:
         slope.draw(screen, camera_x)
 
-    score_text = small_font.render(f'Score: {score}', True, WHITE)
-    screen.blit(score_text, (10, 10))
+    pygame.draw.rect(screen, (0, 255, 0),
+                     pygame.Rect(finish_line.x - camera_x, finish_line.y,
+                                 finish_line.width, finish_line.height))
 
     draw_button("Menu", WIDTH - 120, 20, 100, 40, GRAY, lambda: set_state("menu"))
 
 def game_over_screen():
     screen.fill(BLACK)
     render_text("Game Over", font, RED, WIDTH // 2, HEIGHT // 3)
-    render_text(f"Final Score: {score}", small_font, WHITE, WIDTH // 2, HEIGHT // 2)
     draw_button("Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, start_game)
     draw_button("Menu", WIDTH // 2 - 100, HEIGHT // 2 + 170, 200, 50, GRAY, lambda: set_state("menu"))
 
+def win_level_screen():
+    screen.fill(BLACK)
+    render_text("Congratulations", font, BLUE, WIDTH // 2, HEIGHT // 3)
 # Initialisation des objets du jeu
 ball = Ball(WIDTH // 2, HEIGHT // 2)
 ropes = generate_rope_chain()
 platforms = generate_platforms()
+slopes=generate_slopes()
 camera_x = 0
-score = 0
-score_increased = False
 
 # Boucle principale
 running = True
@@ -429,6 +432,8 @@ while running:
         load_game_screen()
     elif game_state == "playing":
         game_screen()
+    elif game_state == "win_level":
+        win_level_screen()
     elif game_state == "game_over":
         game_over_screen()
 
