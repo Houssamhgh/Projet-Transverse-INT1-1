@@ -89,7 +89,8 @@ class Rope(pygame.sprite.Sprite):
             pygame.draw.line(screen, WHITE,
                              (self.anchor.x - camera_x, self.anchor.y),
                              (ball.pos.x - camera_x, ball.pos.y), 3)
-        pygame.draw.circle(screen, (0, 255, 0), (self.anchor.x - camera_x, self.anchor.y), 6)
+        if ball.pos.x<4100:
+            pygame.draw.circle(screen, (0, 255, 0), (self.anchor.x - camera_x, self.anchor.y), 6)
 
 class Ball(pygame.sprite.Sprite):
     def __init__(self, x, y, radius=10):
@@ -113,6 +114,11 @@ class Ball(pygame.sprite.Sprite):
         else:
             self.is_attached = False
             self.attached_rope = None
+
+
+        if self.pos.y - self.radius < 0:
+            self.pos.y = self.radius
+            self.velocity.y = 0
 
         if self.is_attached:
             direction = self.pos - self.attached_rope.anchor
@@ -195,7 +201,7 @@ class SlopedPlatform (pygame.sprite.Sprite):
             if ball.velocity.dot(normal) > 0:
                 # Calcule la pénétration exacte
                 penetration_depth = ball.radius - distance
-                if distance != 0:  # éviter division par zéro
+                if distance != 0:
                     correction_vector = delta.normalize() * penetration_depth
                 else:
                     correction_vector = normal * penetration_depth  # fallback si pile sur le point
@@ -229,13 +235,24 @@ class Platform(pygame.sprite.Sprite):
             pygame.draw.rect(screen, RED, self.rect.move(-camera_x, 0))
 
 
+
 def generate_rope_chain():
-    return [Rope(WIDTH // 2 + i * SPACE_BETWEEN_ROPES, HEIGHT // 4 + random.randint(-50, 50)) for i in range(5)]
+    return [
+        Rope(600, 50),
+        Rope(1000, 150),
+        Rope(1300, 200),
+        Rope(2000, 100),
+        Rope(2700, 70),
+        Rope(3200, 100),
+        Rope(3700, 80),
+        Rope(4000, 50),
+        Rope(5000, 100),
+        ]
+
 
 def generate_platforms():
     return [
         Platform(615, 400, 150, 10,bouncy=True),
-        Platform(300, 400, 200, 20, bouncy=True),
         Platform(1050, 400, 150, 20,bouncy=False),
         Platform(1800, 400, 150, 20,bouncy=True),
         Platform(2700, 400, 150, 20,bouncy=False),
@@ -246,7 +263,7 @@ def generate_slopes():
     return[
         SlopedPlatform(350, 300, 600, 400),
         SlopedPlatform(350, 100, 350,300 ),
-        SlopedPlatform(4000,300, 4000, 400 ),
+        SlopedPlatform(4000,400, 4000, 300 ),
     ]
 def draw_spider_web():
     center_x, center_y = WIDTH // 2, HEIGHT // 2
@@ -403,6 +420,8 @@ def game_over_screen():
 def win_level_screen():
     screen.fill(BLACK)
     render_text("Congratulations", font, BLUE, WIDTH // 2, HEIGHT // 3)
+    draw_button("Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, start_game)
+    draw_button("Menu", WIDTH // 2 - 100, HEIGHT // 2 + 170, 200, 50, GRAY, lambda: set_state("menu"))
 # Initialisation des objets du jeu
 ball = Ball(WIDTH // 2, HEIGHT // 2)
 ropes = generate_rope_chain()
