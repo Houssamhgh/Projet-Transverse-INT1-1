@@ -204,7 +204,7 @@ class SlopedPlatform (pygame.sprite.Sprite):
                 if distance != 0:
                     correction_vector = delta.normalize() * penetration_depth
                 else:
-                    correction_vector = normal * penetration_depth  # fallback si pile sur le point
+                    correction_vector = normal * penetration_depth
 
                 ball.pos += correction_vector
 
