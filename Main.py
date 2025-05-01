@@ -1,8 +1,5 @@
-import pygame
-import random
-import math
 import sys
-from Levels import ropes, platforms, slopes
+from Screens import *
 
 # Initialisation globale de pygame
 pygame.init()
@@ -23,10 +20,7 @@ while running:
         elif game_state == "load_game" and event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
                 start_game()
-            elif event.key == pygame.K_BACKSPACE:
-                input_text = input_text[:-1]
-            else:
-                input_text += event.unicode
+
 
     if game_state == "menu":
         menu_screen()

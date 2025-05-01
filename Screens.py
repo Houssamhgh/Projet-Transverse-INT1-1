@@ -43,7 +43,7 @@ def set_state(state):
     game_state = state
 
 def start_game():
-    global game_state, ball, ropes, platforms, slopes, camera_x,finish_line
+    global game_state, ball, ropes, platforms, slopes, camera_x, finish_line
     game_state = "playing"
     ball = Ball(WIDTH // 2, HEIGHT // 2)
     ropes = generate_rope_chain()
