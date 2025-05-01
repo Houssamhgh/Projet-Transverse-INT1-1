@@ -181,41 +181,34 @@ class SlopedPlatform (pygame.sprite.Sprite):
         pygame.draw.line(screen, self.color, start, end, self.thickness)
 
     def check_collision_and_bounce(self, ball):
-        # Vecteur de la pente
         line_vec = self.end - self.start
         line_unit = line_vec.normalize()
         normal = pygame.Vector2(-line_unit.y, line_unit.x)
 
-        # Projection du centre de la balle sur la pente
         ball_to_start = ball.pos - self.start
         proj_length = ball_to_start.dot(line_unit)
         proj_length_clamped = max(0, min(proj_length, line_vec.length()))
         closest_point = self.start + proj_length_clamped * line_unit
 
-        # Distance entre la balle et la pente
         delta = ball.pos - closest_point
         distance = delta.length()
 
         if distance < ball.radius:
-            # Vérifie que la balle va vers la pente (collision réelle)
+            # Inverse la normale si la balle vient de l'autre côté
             if ball.velocity.dot(normal) > 0:
-                # Calcule la pénétration exacte
-                penetration_depth = ball.radius - distance
-                if distance != 0:
-                    correction_vector = delta.normalize() * penetration_depth
-                else:
-                    correction_vector = normal * penetration_depth
+                normal = -normal
 
-                ball.pos += correction_vector
+            penetration_depth = ball.radius - distance
+            correction_vector = delta.normalize() * penetration_depth if distance != 0 else normal * penetration_depth
+            ball.pos += correction_vector
 
-                if self.bouncy:
-                    # Rebond réaliste
-                    ball.velocity = ball.velocity.reflect(normal) * 1.2
-                    return True
-                else:
-                    ball.is_alive = False
-                    ball.kill()
-                    return False  # rebond non effectué
+            if self.bouncy:
+                ball.velocity = ball.velocity.reflect(normal) * 1.2
+                return True
+            else:
+                ball.is_alive = False
+                ball.kill()
+                return False
         return False
 
 
@@ -356,18 +349,16 @@ def settings_screen():
 def load_game_screen():
     global input_text
     screen.fill(BLACK)
-    render_text("Enter your name:", font, RED, WIDTH // 2, 100)
-    render_text("Please enter your name and press Enter", small_font, WHITE, WIDTH // 2, 160)
 
-    input_box = pygame.Rect(WIDTH // 2 - 100, 200, 200, 40)
-    pygame.draw.rect(screen, GRAY, input_box)
-    render_text(input_text, small_font, BLACK, WIDTH // 2, 220)
+    render_text("Choose your level:", font, RED, WIDTH // 2, 100)
 
-    render_text("Leaderboard:", small_font, WHITE, WIDTH // 2, 300)
-    render_text("No scores yet.", small_font, WHITE, WIDTH // 2, 350)
 
-    draw_button("Confirm", WIDTH // 2 - 100, 450, 200, 50, GRAY, start_game)
-    draw_button("Back", WIDTH // 2 - 100, 520, 200, 50, GRAY, lambda: set_state("menu"))
+
+    draw_button("Easy", 25, HEIGHT//3, 150, 150, GRAY, start_game)
+    draw_button("Normal", 325, HEIGHT // 3, 150, 150, GRAY, start_game)
+    draw_button("Hard", 625, HEIGHT // 3, 150, 150, GRAY, start_game)
+    draw_button("Back", WIDTH-220, HEIGHT-70, 200, 50, GRAY, lambda: set_state("menu"))
+
 
 def game_screen():
     global game_state, camera_x, score, score_increased
