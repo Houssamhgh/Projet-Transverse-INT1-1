@@ -80,9 +80,9 @@ def draw_button(text, x, y, width, height, color, action=None):
     else:
         pygame.draw.rect(screen, color, (x, y, width, height))
 
-    # Calculer la position pour centrer le texte dans le bouton
+
     text_surface = small_font.render(text, True, WHITE)
-    text_rect = text_surface.get_rect(center=(x + width // 2, y + height // 2))  # Centrer le texte dans le bouton
+    text_rect = text_surface.get_rect(center=(x + width // 2, y + height // 2))
     screen.blit(text_surface, text_rect)
 
 
@@ -193,23 +193,13 @@ def load_game_screen():
     global input_text
     screen.fill(background_color)
 
-    # Centrer le titre "Enter your name"
-    render_text("Enter your name:", font, RED, screen_width // 2, 100)
+    render_text("Choose your level:", font, RED, screen_width // 2, 100)
 
-    # Message d'indication centré
-    render_text("Please enter your name and press Enter", small_font, WHITE, screen_width // 2, 160)
 
-    # Créer une boîte de saisie pour le nom et la centrer
-    input_box = pygame.Rect(screen_width // 2 - 100, 200, 200, 40)
-    pygame.draw.rect(screen, GRAY, input_box)
-    render_text(input_text, small_font, WHITE, screen_width // 2, 215)  # Centrer le texte
 
-    # Classement centré
-    render_text("Leaderboard:", small_font, WHITE, screen_width // 2, 300)
-    render_text("No scores yet.", small_font, WHITE, screen_width // 2, 350)
-
-    # Boutons centrés
-    draw_button("Confirm", screen_width-220, 450, 200, 50, GRAY, lambda: set_state("playing"))
+    draw_button("Easy", 25, screen_height//3, 150, 150, GRAY, lambda: set_state("playing"))
+    draw_button("Normal", 325, screen_height // 3, 150, 150, GRAY, lambda: set_state("playing"))
+    draw_button("Hard", 625, screen_height // 3, 150, 150, GRAY, lambda: set_state("playing"))
     draw_button("Back", screen_width-220, screen_height-70, 200, 50, GRAY, lambda: set_state("menu"))
 
 def set_state(state):
