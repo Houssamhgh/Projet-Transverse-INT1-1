@@ -1,4 +1,5 @@
 import pygame
+import menu
 import random
 import math
 import sys
@@ -243,21 +244,47 @@ def generate_rope_chain():
         ]
 
 
-def generate_platforms():
-    return [
-        Platform(615, 400, 150, 10,bouncy=True),
+def generate_platforms(index):
+    levels = [
+        [Platform(615, 400, 150, 10,bouncy=True),
         Platform(1050, 400, 150, 20,bouncy=False),
         Platform(1800, 400, 150, 20,bouncy=True),
         Platform(2700, 400, 150, 20,bouncy=False),
-        Platform(3600, 400, 150, 20,bouncy=True),
+        Platform(3600, 400, 150, 20,bouncy=True),],
+
+        [Platform(700, 400, 150, 10,bouncy=True),
+        Platform(1050, 400, 150, 20,bouncy=False),
+        Platform(1500, 400, 150, 20,bouncy=True),],
+
+        [Platform(700, 400, 150, 10,bouncy=True),
+        Platform(1050, 400, 150, 20,bouncy=False),
+        Platform(1500, 400, 150, 20,bouncy=True),
+        Platform(2000, 400, 150, 20,bouncy=True),],
+
+        [Platform(700, 400, 150, 10,bouncy=True),
+        Platform(1050, 400, 150, 20,bouncy=False),
+        Platform(1700, 400, 150, 20,bouncy=True),]
 
     ]
-def generate_slopes():
-    return[
-        SlopedPlatform(350, 300, 600, 400),
+    return levels[index]
+def generate_slopes(index):
+    levels = [
+        [SlopedPlatform(350, 300, 600, 400),
         SlopedPlatform(350, 100, 350,300 ),
+        SlopedPlatform(4000,400, 4000, 300 ),],
+
+        [SlopedPlatform(350, 300, 600, 400),
+        SlopedPlatform(4000,400, 4000, 300 ),],
+
+        [SlopedPlatform(350, 300, 600, 400),
         SlopedPlatform(4000,400, 4000, 300 ),
+        SlopedPlatform(5000,400, 4000, 300 ),
+        ],
+        [SlopedPlatform(350, 300, 600, 400),
+        SlopedPlatform(4000,400, 4000, 300 ),
+        ]
     ]
+    return levels[index]
 def draw_spider_web():
     center_x, center_y = WIDTH // 2, HEIGHT // 2
     num_lines = 10
@@ -308,13 +335,33 @@ def set_state(state):
     global game_state
     game_state = state
 
-def start_game():
-    global game_state, ball, ropes, platforms, slopes, camera_x,finish_line
+def start_game(difficulty):
+    global game_state, ball, ropes, platforms, slopes, camera_x,finish_line, current_level_index
+    if difficulty == 'easy':
+        current_level_index = 0
+    elif difficulty == 'medium':
+        current_level_index = 1
+    elif difficulty == 'hard':
+        current_level_index = 2
+    else:
+        current_level_index = 0
+
     game_state = "playing"
     ball = Ball(WIDTH // 2, HEIGHT // 2)
     ropes = generate_rope_chain()
-    platforms = generate_platforms()
-    slopes = generate_slopes()
+    platforms = generate_platforms(current_level_index)
+    slopes = generate_slopes(current_level_index)
+    camera_x = 0
+    finish_line = pygame.Rect(4200,0,20,HEIGHT)
+
+def start_game_by_index (index):
+    global game_state,ball,ropes,platforms,slopes,camera_x,finish_line,current_level_index
+    current_level_index = index
+    game_state = "playing"
+    ball = Ball(WIDTH // 2, HEIGHT // 2)
+    ropes = generate_rope_chain()
+    platforms = generate_platforms(current_level_index)
+    slopes = generate_slopes(current_level_index)
     camera_x = 0
     finish_line = pygame.Rect(4200,0,20,HEIGHT)
 
@@ -324,7 +371,7 @@ def menu_screen():
 
     render_text("Spidey Hook", font, RED, WIDTH // 2, 100)
 
-    draw_button("Start Game", WIDTH // 2 - 100, 200, 200, 50, GRAY, start_game)
+    draw_button("Start Game", WIDTH // 2 - 100, 200, 200, 50, GRAY, lambda:start_game('easy'))
     draw_button("Load Game", WIDTH // 2 - 100, 300, 200, 50, GRAY, lambda: set_state("load_game"))
     draw_button("Settings", 20, HEIGHT-70, 200, 50, GRAY, lambda: set_state("settings"))
 
@@ -354,14 +401,14 @@ def load_game_screen():
 
 
 
-    draw_button("Easy", 25, HEIGHT//3, 150, 150, GRAY, start_game)
-    draw_button("Normal", 325, HEIGHT // 3, 150, 150, GRAY, start_game)
-    draw_button("Hard", 625, HEIGHT // 3, 150, 150, GRAY, start_game)
+    draw_button("Easy", WIDTH // 3 - 150 // 2 - (100 // 2), HEIGHT // 2 - 150 // 2,150,150, GRAY,lambda:start_game('easy') )
+    draw_button("Normal", WIDTH // 2 - 150 // 2, HEIGHT // 2 - 150 // 2, 150, 150, GRAY, lambda: start_game('medium'))
+    draw_button("Hard", 2 * WIDTH // 3 - 150 // 2 + (100 // 2), HEIGHT // 2 - 150 // 2, 150, 150, GRAY, lambda: start_game('hard'))
     draw_button("Back", WIDTH-220, HEIGHT-70, 200, 50, GRAY, lambda: set_state("menu"))
 
 
 def game_screen():
-    global game_state, camera_x, score, score_increased
+    global game_state, camera_x, current_level_index
 
     keys = pygame.key.get_pressed()
     ball.update(keys, platforms,slopes)
@@ -376,7 +423,11 @@ def game_screen():
 
     # Vérifie la collision avec la ligne d'arrivée
     if ball_rect.colliderect(finish_line):
-        game_state = "win_level"
+        current_level_index +=1
+        if current_level_index < 4:
+            start_game_by_index(current_level_index)
+        else:
+            game_state = "win_level"
 
     for rope in ropes:
         rope.update(ball)
@@ -405,7 +456,7 @@ def game_screen():
 def game_over_screen():
     screen.fill(BLACK)
     render_text("Game Over", font, RED, WIDTH // 2, HEIGHT // 3)
-    draw_button("Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, start_game)
+    draw_button("Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, lambda:start_game('easy'))
     draw_button("Menu", WIDTH // 2 - 100, HEIGHT // 2 + 170, 200, 50, GRAY, lambda: set_state("menu"))
 
 def win_level_screen():
@@ -416,8 +467,8 @@ def win_level_screen():
 # Initialisation des objets du jeu
 ball = Ball(WIDTH // 2, HEIGHT // 2)
 ropes = generate_rope_chain()
-platforms = generate_platforms()
-slopes=generate_slopes()
+platforms = generate_platforms(3)
+slopes=generate_slopes(3)
 camera_x = 0
 
 # Boucle principale
