@@ -157,6 +157,13 @@ class SlopedPlatform(pygame.sprite.Sprite):
         self.bouncy = bouncy
         self.thickness = 8
         self.color = GREEN if bouncy else RED
+        # Ajout d'une boîte englobante pour la détection de collision
+        self.rect = pygame.Rect(
+            min(x1, x2) - self.thickness,
+            min(y1, y2) - self.thickness,
+            abs(x2 - x1) + self.thickness * 2,
+            abs(y2 - y1) + self.thickness * 2
+        )
 
     def draw(self, screen, camera_x):
         start = self.start - pygame.Vector2(camera_x, 0)
@@ -164,6 +171,15 @@ class SlopedPlatform(pygame.sprite.Sprite):
         pygame.draw.line(screen, self.color, start, end, self.thickness)
 
     def check_collision_and_bounce(self, ball):
+        # Vérification rapide avec la boîte englobante
+        if not self.rect.colliderect(pygame.Rect(
+            ball.pos.x - ball.radius,
+            ball.pos.y - ball.radius,
+            ball.radius * 2,
+            ball.radius * 2
+        )):
+            return
+
         line_vec = self.end - self.start
         line_unit = line_vec.normalize()
         normal = pygame.Vector2(-line_unit.y, line_unit.x)
@@ -174,16 +190,27 @@ class SlopedPlatform(pygame.sprite.Sprite):
         delta = ball.pos - closest_point
         distance = delta.length()
 
-        if distance < ball.radius and ball.velocity.dot(normal) > 0:
-            penetration_depth = ball.radius - distance
-            correction_vector = delta.normalize() * penetration_depth if distance != 0 else normal * penetration_depth
-            ball.pos += correction_vector
-
-            if self.bouncy:
-                ball.velocity = ball.velocity.reflect(normal) * 1.2
+        if distance < ball.radius:
+            # Pour les plateformes verticales (x1 == x2)
+            if self.start.x == self.end.x:
+                # Si la balle vient de gauche
+                if ball.pos.x < self.start.x:
+                    ball.pos.x = self.start.x - ball.radius
+                    ball.velocity.x = -ball.velocity.x * 1.5
+                # Si la balle vient de droite
+                else:
+                    ball.pos.x = self.start.x + ball.radius
+                    ball.velocity.x = -ball.velocity.x * 1.5
             else:
-                ball.is_alive = False
-                ball.kill()
+                penetration_depth = ball.radius - distance
+                correction_vector = delta.normalize() * penetration_depth if distance != 0 else normal * penetration_depth
+                ball.pos += correction_vector
+
+                if self.bouncy:
+                    ball.velocity = ball.velocity.reflect(normal) * 1.5
+                else:
+                    ball.is_alive = False
+                    ball.kill()
 
 # Fonctions de génération
 def generate_rope_chain():
