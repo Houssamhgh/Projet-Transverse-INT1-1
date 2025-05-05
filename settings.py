@@ -1,5 +1,5 @@
 import pygame
-
+#constantes et paramètres
 # Dimensions de l'écran
 WIDTH, HEIGHT = 800, 600
 
@@ -18,6 +18,7 @@ GRAVITY = MASS * GRAVITATIONAL_CONST
 SPACE_BETWEEN_ROPES = 300
 CAMERA_OFFSET = WIDTH // 3
 ON_GROUND = False
+GAME_STATES = ["menu", "aiming", "playing", "load_game", "settings", "game_over", "win_level"]
 
 # Fonts
 pygame.font.init()

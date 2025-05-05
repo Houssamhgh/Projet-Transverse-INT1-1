@@ -1,6 +1,6 @@
 import pygame
 from settings import *
-
+#Fonctions d'interface utilisateur
 click_released = True
 
 def render_text(text, font, color, x, y, screen):
@@ -26,3 +26,33 @@ def draw_button(screen, text, x, y, width, height, color, font, action=None):
     text_surface = font.render(text, True, WHITE)
     text_rect = text_surface.get_rect(center=rect.center)
     screen.blit(text_surface, text_rect)
+import math
+from settings import *
+
+def draw_trajectory(ball_pos, velocity, camera_x=0):
+    pos = pygame.Vector2(ball_pos)
+    vel = pygame.Vector2(velocity)
+    points = []
+
+    for _ in range(60):
+        pos += vel
+        vel.y += GRAVITY
+        points.append((int(pos.x - camera_x), int(pos.y)))
+
+    for point in points:
+        pygame.draw.circle(pygame.display.get_surface(), WHITE, point, 2)
+
+
+def draw_direction_arrow(screen, start_pos, velocity, camera_x=0):
+    end_pos = start_pos + velocity * 10  # Multiplier pour allonger la flèche
+    pygame.draw.line(screen, BLUE, (start_pos.x - camera_x, start_pos.y),
+                     (end_pos.x - camera_x, end_pos.y), 3)
+
+    # Tête de flèche
+    angle = math.atan2(velocity.y, velocity.x)
+    arrow_size = 10
+    left = (end_pos.x - camera_x - arrow_size * math.cos(angle - 0.5),
+            end_pos.y - arrow_size * math.sin(angle - 0.5))
+    right = (end_pos.x - camera_x - arrow_size * math.cos(angle + 0.5),
+             end_pos.y - arrow_size * math.sin(angle + 0.5))
+    pygame.draw.polygon(screen, BLUE, [(end_pos.x - camera_x, end_pos.y), left, right])
