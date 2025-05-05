@@ -2,6 +2,7 @@ import pygame
 import random
 import math
 
+
 # Constantes internes
 GRAVITATIONAL_CONST = 9.81
 MASS = 0.05
