@@ -302,17 +302,29 @@ def render_text(text, font, color, x, y):
     screen.blit(text_surface, text_rect)
 
 def draw_button(text, x, y, width, height, color, action=None):
+    global click_released
+
     mouse_pos = pygame.mouse.get_pos()
     mouse_click = pygame.mouse.get_pressed()
 
     button_rect = pygame.Rect(x, y, width, height)
     pygame.draw.rect(screen, color, button_rect)
 
+
     if button_rect.collidepoint(mouse_pos):
         pygame.draw.rect(screen, BLUE, button_rect, 3)
-        if mouse_click[0] == 1 and action is not None:
-            pygame.time.delay(100)
+
+
+        if mouse_click[0] == 1 and action and click_released:
             action()
+            click_released = False
+    else:
+        pygame.draw.rect(screen, BLACK, button_rect, 3)
+
+
+    if mouse_click[0] == 0:
+        click_released = True
+
 
     text_surface = small_font.render(text, True, WHITE)
     text_rect = text_surface.get_rect(center=button_rect.center)
