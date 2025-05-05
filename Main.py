@@ -1,10 +1,11 @@
+# main.py
 import pygame
 import sys
 import random
 import math
 from settings import *
 from utils import Spider, Ball, generate_rope_chain, generate_platforms, generate_slopes, Rope
-from ui import render_text, draw_button
+from ui import render_text, draw_button, draw_trajectory, draw_direction_arrow
 
 # Initialisation pygame
 pygame.init()
@@ -12,7 +13,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Spidey Hook")
 clock = pygame.time.Clock()
 
-# État global
+# Etat global
 game_state = "menu"
 music_on = True
 sounds_on = True
@@ -20,7 +21,10 @@ selected_music = "Track 1"
 input_text = ""
 click_released = True
 
-# Variables de niveau
+# Trajectoire initiale
+initial_velocity = pygame.Vector2(8, -5)
+
+# Niveau
 current_level_index = 0
 camera_x = 0
 ball = Ball(WIDTH // 2, HEIGHT // 2)
@@ -29,10 +33,10 @@ platforms = generate_platforms(current_level_index)
 slopes = generate_slopes(current_level_index)
 finish_line = pygame.Rect(4200, 0, 20, HEIGHT)
 
-# Araignées du menu
+# Araignées dans le menu
 spiders = [Spider() for _ in range(5)]
 
-# Fonctions d’état
+
 def set_state(state):
     global game_state
     game_state = state
@@ -56,7 +60,7 @@ def start_game(difficulty='easy'):
     start_game_by_index(index)
 
 def start_game_by_index(index):
-    global ball, ropes, platforms, slopes, camera_x, finish_line, game_state, current_level_index
+    global ball, ropes, platforms, slopes, camera_x, finish_line, game_state, current_level_index, initial_velocity
     current_level_index = index
     ball = Ball(WIDTH // 2, HEIGHT // 2)
     ropes = generate_rope_chain(index)
@@ -64,9 +68,9 @@ def start_game_by_index(index):
     slopes = generate_slopes(index)
     finish_line = pygame.Rect(4200, 0, 20, HEIGHT)
     camera_x = 0
-    game_state = "playing"
+    initial_velocity = pygame.Vector2(8, -5)
+    game_state = "aiming"
 
-# Écrans
 def menu_screen():
     screen.fill(BLACK)
     center_x, center_y = WIDTH // 2, HEIGHT // 2
@@ -85,6 +89,32 @@ def menu_screen():
     for spider in spiders:
         spider.move()
         spider.draw(screen)
+
+def aiming_screen():
+    global initial_velocity, game_state, ball
+
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT]:
+        initial_velocity.x -= 0.2
+    if keys[pygame.K_RIGHT]:
+        initial_velocity.x += 0.2
+    if keys[pygame.K_UP]:
+        initial_velocity.y -= 0.2
+    if keys[pygame.K_DOWN]:
+        initial_velocity.y += 0.2
+
+    if keys[pygame.K_RETURN] or keys[pygame.K_SPACE]:
+        ball.velocity = initial_velocity
+        game_state = "playing"
+        return
+
+    screen.fill(BLACK)
+    render_text("Choisis la trajectoire", small_font, RED, WIDTH // 2, 50, screen)
+    draw_trajectory(ball.pos, initial_velocity, camera_x=0)
+    ball.draw(screen, 0)
+    draw_direction_arrow(screen, ball.pos, initial_velocity)
+    draw_button(screen, "Valider", WIDTH - 150, HEIGHT - 60, 120, 40, GRAY, small_font,
+                lambda: setattr(ball, "velocity", initial_velocity) or set_state("playing"))
 
 def settings_screen():
     screen.fill(BLACK)
@@ -169,6 +199,8 @@ while running:
         settings_screen()
     elif game_state == "load_game":
         load_game_screen()
+    elif game_state == "aiming":
+        aiming_screen()
     elif game_state == "playing":
         game_screen()
     elif game_state == "game_over":
