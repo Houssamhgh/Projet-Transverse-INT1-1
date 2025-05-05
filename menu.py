@@ -41,26 +41,7 @@ best_scores = {}
 selected_music = "Track 1"
 input_text = ""
 
-class Spider:
-    def __init__(self):
-        self.x = random.randint(0, WIDTH)
-        self.y = random.randint(0, HEIGHT)
-        self.speed_x = random.choice([-1, 1]) * random.randint(1, 3)
-        self.speed_y = random.choice([-1, 1]) * random.randint(1, 3)
 
-    def move(self):
-        self.x += self.speed_x
-        self.y += self.speed_y
-
-        if self.x < 0 or self.x > WIDTH:
-            self.speed_x = -self.speed_x
-        if self.y < 0 or self.y > HEIGHT:
-            self.speed_y = -self.speed_y
-
-    def draw(self):
-        pygame.draw.circle(screen, WHITE, (self.x, self.y), 10)
-
-spiders = [Spider() for _ in range(5)]
 
 class Rope(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -163,7 +144,9 @@ class Ball(pygame.sprite.Sprite):
             slope.check_collision_and_bounce(ball)
 
     def draw(self, screen, camera_x):
-        pygame.draw.circle(screen, BLUE, (self.pos.x - camera_x, self.pos.y), self.radius)
+        self.image = pygame.image.load("spider.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (self.radius * 3.7, self.radius * 3.7))
+        screen.blit(self.image, (self.pos.x - camera_x - self.radius, self.pos.y - self.radius))
 
 
 class SlopedPlatform (pygame.sprite.Sprite):
@@ -262,16 +245,7 @@ def generate_slopes():
         SlopedPlatform(350, 100, 350,300 ),
         SlopedPlatform(4000,400, 4000, 300 ),
     ]
-def draw_spider_web():
-    center_x, center_y = WIDTH // 2, HEIGHT // 2
-    num_lines = 10
-    for i in range(1, num_lines + 1):
-        pygame.draw.circle(screen, WHITE, (center_x, center_y), i * 40, 2)
 
-    for i in range(0, 360, 30):
-        x1 = center_x + 40 * num_lines * math.cos(math.radians(i))
-        y1 = center_y + 40 * num_lines * math.sin(math.radians(i))
-        pygame.draw.line(screen, WHITE, (center_x, center_y), (x1, y1), 2)
 
 def render_text(text, font, color, x, y):
     text_surface = font.render(text, True, color)
@@ -323,18 +297,29 @@ def start_game():
     finish_line = pygame.Rect(4200,0,20,HEIGHT)
 
 def menu_screen():
-    screen.fill(BLACK)
-    draw_spider_web()
+    WIDTH, HEIGHT = 800, 600
+    background_img = pygame.image.load("BACKG.png")  # Changez le nom selon votre fichier
+    background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
+    screen.blit(background_img, (0, 0))
+    logo_img = pygame.image.load("LOGO.png")
 
-    render_text("Spidey Hook", font, RED, WIDTH // 2, 100)
+    logo_img = pygame.transform.scale(logo_img, (500, 200))
+    screen.blit(logo_img, (WIDTH // 2 - logo_img.get_width() // 2, 50))
 
-    draw_button("Start Game", WIDTH // 2 - 100, 200, 200, 50, GRAY, start_game)
-    draw_button("Load Game", WIDTH // 2 - 100, 300, 200, 50, GRAY, lambda: set_state("load_game"))
-    draw_button("Settings", 20, HEIGHT-70, 200, 50, GRAY, lambda: set_state("settings"))
+    draw_button("Start Game", WIDTH // 2 - 50, 250, 50, 20, GRAY, start_game)
+    start_img = pygame.image.load("START.png").convert_alpha()
+    start_img = pygame.transform.scale(start_img, (240, 80))
+    start_rect = start_img.get_rect(center=(WIDTH // 2.07, 250))
+    screen.blit(start_img, start_rect)
 
-    for spider in spiders:
-        spider.move()
-        spider.draw()
+    draw_button("", WIDTH // 2 - 50, 350, 50, 20, GRAY, lambda: set_state("load_game"))
+    load_img = pygame.image.load("LOAD.png").convert_alpha()
+    load_img = pygame.transform.scale(load_img, (250, 100))
+    load_rect = load_img.get_rect(center=(WIDTH // 2.07, 350))
+    screen.blit(load_img, load_rect)
+    draw_button("Settings", 30, HEIGHT-100, 200, 50, GRAY, lambda: set_state("settings"))
+    set_img = pygame.image
+
 
 def settings_screen():
     screen.fill(BLACK)
@@ -425,6 +410,12 @@ def back_to_menu():
 def game_screen():
     global game_state, camera_x, score, score_increased
 
+    background_img = pygame.image.load("BACKGB.png").convert()
+    background_img = pygame.transform.scale(background_img, (800, HEIGHT))
+    for i in range((WIDTH // background_img.get_width()) + 2):  # +2 to cover edges while scrolling
+        screen.blit(background_img, (i * background_img.get_width() - (camera_x % background_img.get_width()), 0))
+    screen.blit(background_img, (-camera_x, 0))
+
     keys = pygame.key.get_pressed()
     ball.update(keys, platforms,slopes)
     camera_x = ball.pos.x - CAMERA_OFFSET
@@ -447,7 +438,7 @@ def game_screen():
         ropes.append(Rope(ropes[-1].anchor.x + SPACE_BETWEEN_ROPES, HEIGHT // 4 + random.randint(-50, 50)))
 
 
-    screen.fill(BLACK)
+
     for rope in ropes:
         rope.draw(screen, ball, camera_x)
     ball.draw(screen, camera_x)
@@ -463,7 +454,8 @@ def game_screen():
                                  finish_line.width, finish_line.height))
 
     draw_button("Menu", WIDTH - 120, 20, 100, 40, GRAY, lambda: set_state("menu"))
-
+    clock = pygame.time.Clock()
+    clock.tick(80)
 def game_over_screen():
     screen.fill(BLACK)
     render_text("Game Over", font, RED, WIDTH // 2, HEIGHT // 3)
