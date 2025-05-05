@@ -1,217 +1,186 @@
+# main.py (corrigé)
 import pygame
-import random
+import sys
+import json
+from module import Ball, Spider, generate_rope_chain, generate_platforms, generate_slopes, SPACE_BETWEEN_ROPES
+from function import draw_button, draw_spider_web, render_text, draw_text
 
-# Pygame Initialization
 pygame.init()
+
+# Dimensions & setup
 WIDTH, HEIGHT = 800, 600
+CAMERA_OFFSET = WIDTH // 3
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Spidey Hook")
 clock = pygame.time.Clock()
 
-# Game Configuration
-GRAVITY = 0.2
-MOVE_FORCE = 0.2   # Left/right movement force
-DAMPING = 0.98  # Velocity damping for realistic motion
-SPACE_BETWEEN_ROPES = 300  # Distance between ropes
-CAMERA_OFFSET = WIDTH // 3  # Camera follows the player smoothly
-JUMP_FORCE = -10  # Jumping force when the player presses space
-ON_GROUND = 1  # Represents the state of the player being on the ground
-IN_AIR = 0  # Represents the state of the player being in the air
+# Couleurs & polices
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GRAY = (200, 200, 200)
+BLUE = (0, 0, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+font = pygame.font.SysFont("Comic Sans MS", 80)
+small_font = pygame.font.SysFont("Arial", 30)
 
-# Game States
-game_over = False
-score = 0  # Initialize the score
-score_increased = False  # Flag to track if the score has been increased
+# Etat
+game_state = "menu"
+music_on = True
+sounds_on = True
+player_name = ""
+selected_music = "Track 1"
+input_text = ""
 
-
-class Rope:
-    def __init__(self, x, y):
-        self.anchor = pygame.Vector2(x, y)
-        self.length = None  # Will be set when attached
-
-    def attach(self, ball):
-        """ Sets the rope length dynamically based on ball position."""
-        self.length = (ball.pos - self.anchor).length()
-        ball.is_attached, ball.attached_rope = True, self
-
-    def update(self, ball):
-        if ball.is_attached and ball.attached_rope == self:
-            direction = ball.pos - self.anchor
-            distance = direction.length()
-            if distance > self.length:
-                ball.pos = self.anchor + direction.normalize() * self.length
-
-    def draw(self, screen, ball, camera_x):
-        if ball.is_attached and ball.attached_rope == self:
-            pygame.draw.line(screen, (255, 255, 255),
-                             (self.anchor.x - camera_x, self.anchor.y),
-                             (ball.pos.x - camera_x, ball.pos.y), 3)
-        pygame.draw.circle(screen, (0, 255, 0), (self.anchor.x - camera_x, self.anchor.y), 6)
-
-
-class Ball:
-    def __init__(self, x, y, radius=10):
-        self.pos = pygame.Vector2(x, y)
-        self.radius = radius
-        self.velocity = pygame.Vector2(0, 0)
-        self.is_attached = False
-        self.attached_rope = None
-        self.state = ON_GROUND  # Start on the ground
-
-    def update(self, keys, platforms):
-        if self.is_attached and self.attached_rope:
-            if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-                self.velocity.x -= MOVE_FORCE
-            if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-                self.velocity.x += MOVE_FORCE
-            self.velocity.y += GRAVITY * 0.3  # Light gravity effect while swinging
-        else:
-            self.velocity.y += GRAVITY  # Normal gravity when detached
-
-        # Handle jumping
-        if self.state == ON_GROUND and (keys[pygame.K_SPACE] or keys[pygame.K_w]):
-            self.velocity.y = JUMP_FORCE  # Apply a jump force
-            self.state = IN_AIR  # The ball is in the air now
-
-        self.pos += self.velocity
-        self.velocity *= DAMPING  # Apply damping for smooth motion
-
-        # Check for ground collision (bottom of the screen)
-        if self.pos.y >= HEIGHT - self.radius:
-            self.pos.y = HEIGHT - self.radius  # Stop at the bottom
-            self.velocity.y = 0  # Stop downward velocity
-            self.state = ON_GROUND  # Back to the ground
-
-        # Collision with platforms (bounce)
-        for platform in platforms:
-            if platform.rect.colliderect(pygame.Rect(self.pos.x - self.radius, self.pos.y - self.radius, self.radius * 2, self.radius * 2)):
-                if self.velocity.y > 0:  # Only bounce when falling
-                    self.velocity.y = -self.velocity.y * 0.8  # Reverse velocity and apply some dampening
-                    self.pos.y = platform.rect.top - self.radius  # Move ball on top of the platform
-                    self.state = ON_GROUND  # The ball is on the ground again
-
-    def toggle_attachment(self, ropes):
-        if self.is_attached:
-            self.is_attached = False
-            self.attached_rope = None
-        else:
-            closest_rope = min(ropes, key=lambda rope: abs(rope.anchor.x - self.pos.x))
-            closest_rope.attach(self)
-
-    def draw(self, screen, camera_x):
-        pygame.draw.circle(screen, (0, 0, 255), (self.pos.x - camera_x, self.pos.y), self.radius)
-
-
-class Platform:
-    def __init__(self, x, y, width, height):
-        self.rect = pygame.Rect(x, y, width, height)
-
-    def draw(self, screen, camera_x):
-        pygame.draw.rect(screen, (255, 0, 0), self.rect.move(-camera_x, 0))  # Draw red platform
-
-
-def generate_rope_chain():
-    """ Creates an initial set of ropes."""
-    ropes = []
-    for i in range(5):  # Generate 5 ropes
-        x = WIDTH // 2 + i * SPACE_BETWEEN_ROPES
-        y = HEIGHT // 4 + random.randint(-50, 50)
-        ropes.append(Rope(x, y))
-
-    # Remove the 5th rope (index 4)
-    if len(ropes) > 4:
-        ropes.pop(4)  # Remove the rope at index 4 (5th)
-
-    return ropes
-
-
-def generate_platforms():
-    """ Creates some platforms in the game."""
-    return [
-        Platform(100, 500, 150, 20),
-        Platform(300, 400, 200, 20),
-        Platform(600, 300, 150, 20),
-        Platform(200, 500, 100, 20),
-        Platform(1000, 600, 150, 20),
-        Platform(2000, 200, 100, 20)
-    ]
-
-
-# Initialize game objects
+# Objets dynamiques
 ball = Ball(WIDTH // 2, HEIGHT // 2)
+ropes = generate_rope_chain()
 platforms = generate_platforms()
-ropes = generate_rope_chain()  # Generate ropes, but the 5th one is removed
+slopes = generate_slopes()
+spiders = [Spider(WIDTH, HEIGHT) for _ in range(5)]
 camera_x = 0
+finish_line = pygame.Rect(4200, 0, 20, HEIGHT)
 
-# Main game loop
-running = True
-while running:
-    screen.fill((0, 0, 0))  # Fill the screen with black background
+def toggle_music():
+    global music_on
+    music_on = not music_on
 
-    # Check if the game is over
-    if game_over:
-        font = pygame.font.Font(None, 74)
-        text = font.render('Game Over', True, (255, 0, 0))  # Render 'Game Over' text
-        screen.blit(text, (WIDTH // 3, HEIGHT // 3))  # Display text
-        pygame.display.flip()
-        pygame.time.delay(2000)  # Show the message for 2 seconds
-        running = False
-        continue
+def toggle_sounds():
+    global sounds_on
+    sounds_on = not sounds_on
 
-    # Check for events
+def change_music(track="Track 2"):
+    global selected_music
+    selected_music = track
+
+def set_state(state):
+    global game_state
+    game_state = state
+
+def start_game():
+    global ball, ropes, platforms, slopes, camera_x, finish_line, game_state
+    game_state = "playing"
+    ball = Ball(WIDTH // 2, HEIGHT // 2)
+    ropes = generate_rope_chain()
+    platforms = generate_platforms()
+    slopes = generate_slopes()
+    camera_x = 0
+    finish_line = pygame.Rect(4200, 0, 20, HEIGHT)
+
+def init_game_from_data(data):
+    global player_name
+    player_name = data.get("player_name", "Unknown")
+
+def check_save_exists(level):
+    return False
+
+def load_saved_game(difficulty):
+    try:
+        with open(f"save_{difficulty}.json", "r") as file:
+            data = json.load(file)
+            init_game_from_data(data)
+            set_state("playing")
+    except FileNotFoundError:
+        print(f"Pas de sauvegarde pour {difficulty}")
+        set_state("menu")
+    except json.JSONDecodeError:
+        print("Erreur JSON")
+
+def menu_screen():
+    screen.fill(BLACK)
+    draw_spider_web(screen, WIDTH, HEIGHT)
+    render_text("Spidey Hook", font, RED, WIDTH // 2, 100, screen)
+    draw_button("Start Game", WIDTH // 2 - 100, 200, 200, 50, GRAY, screen, small_font, start_game)
+    draw_button("Load Game", WIDTH // 2 - 100, 300, 200, 50, GRAY, screen, small_font, lambda: set_state("load_game"))
+    draw_button("Settings", 20, HEIGHT - 70, 200, 50, GRAY, screen, small_font, lambda: set_state("settings"))
+    for spider in spiders:
+        spider.move()
+        spider.bounce(WIDTH, HEIGHT)
+        spider.draw(screen)
+
+def settings_screen():
+    screen.fill(BLACK)
+    render_text("Settings", font, RED, WIDTH // 2, 100, screen)
+    button_x = WIDTH // 2 - 100
+    draw_button(f"Music: {'On' if music_on else 'Off'}", button_x, 200, 200, 50, GRAY, screen, small_font, toggle_music)
+    draw_button(f"Sounds: {'On' if sounds_on else 'Off'}", button_x, 300, 200, 50, GRAY, screen, small_font, toggle_sounds)
+    draw_button("Change Music", button_x, 400, 200, 50, GRAY, screen, small_font, change_music)
+    draw_button("Back", button_x, 500, 200, 50, GRAY, screen, small_font, lambda: set_state("menu"))
+
+def load_game_screen():
+    screen.fill(BLACK)
+    render_text("Choose Your Level", font, RED, WIDTH // 2, 100, screen)
+    levels = ["Easy", "Normal", "Hard"]
+    positions = [(WIDTH // 3 - 100, 300), (WIDTH // 2 - 75, 300), (2 * WIDTH // 3 - 50, 300)]
+    for i, level in enumerate(levels):
+        draw_button(level, positions[i][0], positions[i][1], 150, 150, GRAY, screen, small_font,
+                    lambda l=level: load_saved_game(l))
+
+def game_screen():
+    global camera_x, game_state
     keys = pygame.key.get_pressed()
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-            ball.toggle_attachment(ropes)
-
-    # Update game state
-    ball.update(keys, platforms)
-    camera_x = max(camera_x, ball.pos.x - CAMERA_OFFSET)
-
-    # Check for ball hitting the bottom (game over condition)
-    if ball.pos.y >= HEIGHT - ball.radius:
-        game_over = True
-
+    ball.update(keys, platforms, slopes, ropes, HEIGHT)
+    camera_x = ball.pos.x - CAMERA_OFFSET
+    if not ball.is_alive:
+        game_state = "game_over"
+    if pygame.Rect(ball.pos.x - ball.radius, ball.pos.y - ball.radius, ball.radius * 2, ball.radius * 2).colliderect(finish_line):
+        game_state = "win_level"
     for rope in ropes:
         rope.update(ball)
-
-    # Generate new ropes dynamically
     if ropes[-1].anchor.x - camera_x < WIDTH:
-        ropes.append(Rope(ropes[-1].anchor.x + SPACE_BETWEEN_ROPES, HEIGHT // 4 + random.randint(-50, 50)))
-
-    # Remove out-of-view ropes
-    ropes = [rope for rope in ropes if rope.anchor.x - camera_x > -150]
-
-    # Increment score only when ball attaches to a rope and hasn't been increased yet
-    if ball.is_attached and ball.attached_rope and not score_increased:
-        score += 1  # Increase the score
-        score_increased = True  # Set flag to prevent multiple increments
-
-    # Reset the score flag if the ball gets detached
-    if not ball.is_attached:
-        score_increased = False
-
-    # Render objects
+        ropes.append(ropes[-1].__class__(ropes[-1].anchor.x + SPACE_BETWEEN_ROPES, HEIGHT // 4 + random.randint(-50, 50)))
+    screen.fill(BLACK)
     for rope in ropes:
         rope.draw(screen, ball, camera_x)
     ball.draw(screen, camera_x)
-
-    # Render platforms
     for platform in platforms:
         platform.draw(screen, camera_x)
+    for slope in slopes:
+        slope.draw(screen, camera_x)
+    pygame.draw.rect(screen, GREEN, pygame.Rect(finish_line.x - camera_x, 0, 20, HEIGHT))
+    draw_button("Menu", WIDTH - 120, 20, 100, 40, GRAY, screen, small_font, lambda: set_state("menu"))
 
-    # Display the score
-    font = pygame.font.Font(None, 36)
-    score_text = font.render(f'Score: {score}', True, (255, 255, 255))
-    screen.blit(score_text, (10, 10))  # Display score at top-left corner
+def game_over_screen():
+    screen.fill(BLACK)
+    render_text("Game Over", font, RED, WIDTH // 2, HEIGHT // 3, screen)
+    draw_button("Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, screen, small_font, start_game)
+    draw_button("Menu", WIDTH // 2 - 100, HEIGHT // 2 + 170, 200, 50, GRAY, screen, small_font, lambda: set_state("menu"))
 
-    # Update the display
+def win_level_screen():
+    screen.fill(BLACK)
+    render_text("Congratulations", font, BLUE, WIDTH // 2, HEIGHT // 3, screen)
+    draw_button("Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, screen, small_font, start_game)
+    draw_button("Menu", WIDTH // 2 - 100, HEIGHT // 2 + 170, 200, 50, GRAY, screen, small_font, lambda: set_state("menu"))
+
+# Boucle principale
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif game_state == "load_game" and event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                start_game()
+            elif event.key == pygame.K_BACKSPACE:
+                input_text = input_text[:-1]
+            else:
+                input_text += event.unicode
+
+    if game_state == "menu":
+        menu_screen()
+    elif game_state == "settings":
+        settings_screen()
+    elif game_state == "load_game":
+        load_game_screen()
+    elif game_state == "playing":
+        game_screen()
+    elif game_state == "game_over":
+        game_over_screen()
+    elif game_state == "win_level":
+        win_level_screen()
+
     pygame.display.flip()
-
-    # Limiting frame rate
     clock.tick(60)
 
 pygame.quit()
-
+sys.exit()
