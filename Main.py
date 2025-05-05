@@ -1,5 +1,4 @@
 import pygame
-import menu
 import random
 import math
 import sys
@@ -230,9 +229,16 @@ class Platform(pygame.sprite.Sprite):
 
 
 
-def generate_rope_chain():
-    return [
-        Rope(600, 50),
+def generate_rope_chain(index):
+    levels = [
+        [Rope(1000, 150),
+        Rope(1300, 100),
+        Rope(2300, 100),
+        Rope(3000, 100),
+        Rope(3500, 80),
+        Rope(5000,100)],
+
+        [Rope(600, 50),
         Rope(1000, 150),
         Rope(1300, 200),
         Rope(2000, 100),
@@ -240,48 +246,94 @@ def generate_rope_chain():
         Rope(3200, 100),
         Rope(3700, 80),
         Rope(4000, 50),
-        Rope(5000, 100),
+        Rope(5000, 100),],
+
+        [Rope(600, 50),
+         Rope(950, 200),
+         Rope(1300, 100),
+         Rope(2075, 225),
+         Rope(2075, 570),
+         Rope(2575,75),
+         Rope(2575,475),
+         Rope(3000, 100),
+         Rope(3700, 80),
+         Rope(5000, 100), ],
+
+        [Rope(600, 50),
+         Rope(1000, 150),
+         Rope(1300, 200),
+         Rope(2000, 100),
+         Rope(2700, 70),
+         Rope(3200, 100),
+         Rope(3500, 80),
+         Rope(4000, 50),
+         Rope(5000, 100), ]
         ]
+    return levels[index]
 
 
 def generate_platforms(index):
     levels = [
+        [Platform(400, 400, 150, 10,bouncy=True),
+        Platform(1000, 400, 150, 20,bouncy=False),
+        Platform(1500, 300, 150, 20,bouncy=True),
+        Platform(2000, 500, 150, 20,bouncy=False),
+        Platform(2700, 400, 150, 20,bouncy=True),
+        Platform(3200, 500, 150, 20,bouncy=False),
+        Platform(3700, 500, 150, 20,bouncy=True),],
+
         [Platform(615, 400, 150, 10,bouncy=True),
         Platform(1050, 400, 150, 20,bouncy=False),
         Platform(1800, 400, 150, 20,bouncy=True),
         Platform(2700, 400, 150, 20,bouncy=False),
         Platform(3600, 400, 150, 20,bouncy=True),],
 
-        [Platform(700, 400, 150, 10,bouncy=True),
-        Platform(1050, 400, 150, 20,bouncy=False),
-        Platform(1500, 400, 150, 20,bouncy=True),],
+        [Platform(1500, 300, 150, 20,bouncy=True),
+         Platform(2000, 150, 150, 20,bouncy=True),
+         Platform(2000,300,150, 20,bouncy=True),
+         Platform(2000, 500, 150, 20,bouncy=False),
+         Platform(2500, 150, 150, 20,bouncy=True),
+         Platform(2500,400,150, 20,bouncy=True),
+         Platform(2500,550,150, 20,bouncy=False)
+         ],
 
         [Platform(700, 400, 150, 10,bouncy=True),
         Platform(1050, 400, 150, 20,bouncy=False),
         Platform(1500, 400, 150, 20,bouncy=True),
-        Platform(2000, 400, 150, 20,bouncy=True),],
-
-        [Platform(700, 400, 150, 10,bouncy=True),
-        Platform(1050, 400, 150, 20,bouncy=False),
-        Platform(1700, 400, 150, 20,bouncy=True),]
+        Platform(2000, 500, 150, 20,bouncy=True),]
 
     ]
     return levels[index]
 def generate_slopes(index):
     levels = [
+        [],
+
         [SlopedPlatform(350, 300, 600, 400),
         SlopedPlatform(350, 100, 350,300 ),
         SlopedPlatform(4000,400, 4000, 300 ),],
 
-        [SlopedPlatform(350, 300, 600, 400),
-        SlopedPlatform(4000,400, 4000, 300 ),],
+        [SlopedPlatform(350, 300, 600, 400,True),
+        SlopedPlatform(1000,0,1000,250,True),
+        SlopedPlatform(1000,350,1000,600,True),
+        SlopedPlatform(2000,150,2000,300,True),
+         SlopedPlatform(2000,500,2000,600,False),
+         SlopedPlatform(2150,150,2150,300,True),
+         SlopedPlatform(2150,500,2150,600,False),
+         SlopedPlatform(2500,150,2500,0,True),
+         SlopedPlatform(2500,400,2500,550,False),
+         SlopedPlatform(2650,400,2650,550,False),
+         SlopedPlatform(2650,150,2650,0,True),
+         SlopedPlatform(3000,300,3150,325,True),
+         SlopedPlatform(3150,325,3300,300,False),
+         SlopedPlatform(3300,300,3450,325,True),
+        SlopedPlatform(4000,250, 4000, 350,True ),
+         SlopedPlatform(4000,0, 4000, 100,False),
+         SlopedPlatform(4000,500, 4000, 600,False),
+         ],
 
         [SlopedPlatform(350, 300, 600, 400),
         SlopedPlatform(4000,400, 4000, 300 ),
         SlopedPlatform(5000,400, 4000, 300 ),
-        ],
-        [SlopedPlatform(350, 300, 600, 400),
-        SlopedPlatform(4000,400, 4000, 300 ),
         ]
     ]
     return levels[index]
@@ -360,7 +412,7 @@ def start_game(difficulty):
 
     game_state = "playing"
     ball = Ball(WIDTH // 2, HEIGHT // 2)
-    ropes = generate_rope_chain()
+    ropes = generate_rope_chain(current_level_index)
     platforms = generate_platforms(current_level_index)
     slopes = generate_slopes(current_level_index)
     camera_x = 0
@@ -371,7 +423,7 @@ def start_game_by_index (index):
     current_level_index = index
     game_state = "playing"
     ball = Ball(WIDTH // 2, HEIGHT // 2)
-    ropes = generate_rope_chain()
+    ropes = generate_rope_chain(current_level_index)
     platforms = generate_platforms(current_level_index)
     slopes = generate_slopes(current_level_index)
     camera_x = 0
@@ -478,7 +530,7 @@ def win_level_screen():
     draw_button("Menu", WIDTH // 2 - 100, HEIGHT // 2 + 170, 200, 50, GRAY, lambda: set_state("menu"))
 # Initialisation des objets du jeu
 ball = Ball(WIDTH // 2, HEIGHT // 2)
-ropes = generate_rope_chain()
+ropes = generate_rope_chain(3)
 platforms = generate_platforms(3)
 slopes=generate_slopes(3)
 camera_x = 0
