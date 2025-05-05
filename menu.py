@@ -144,7 +144,7 @@ class Ball(pygame.sprite.Sprite):
             slope.check_collision_and_bounce(ball)
 
     def draw(self, screen, camera_x):
-        self.image = pygame.image.load("spider.png").convert_alpha()
+        self.image = pygame.image.load("PIC BOUTONS/spider.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (self.radius * 3.7, self.radius * 3.7))
         screen.blit(self.image, (self.pos.x - camera_x - self.radius, self.pos.y - self.radius))
 
@@ -298,22 +298,22 @@ def start_game():
 
 def menu_screen():
     WIDTH, HEIGHT = 800, 600
-    background_img = pygame.image.load("BACKG.png")  # Changez le nom selon votre fichier
+    background_img = pygame.image.load("PIC BOUTONS/BACKG.png")  # Changez le nom selon votre fichier
     background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
     screen.blit(background_img, (0, 0))
-    logo_img = pygame.image.load("LOGO.png")
+    logo_img = pygame.image.load("PIC BOUTONS/LOGO.png")
 
     logo_img = pygame.transform.scale(logo_img, (500, 200))
     screen.blit(logo_img, (WIDTH // 2 - logo_img.get_width() // 2, 50))
 
     draw_button("Start Game", WIDTH // 2 - 50, 250, 50, 20, GRAY, start_game)
-    start_img = pygame.image.load("START.png").convert_alpha()
+    start_img = pygame.image.load("PIC BOUTONS/START.png").convert_alpha()
     start_img = pygame.transform.scale(start_img, (240, 80))
     start_rect = start_img.get_rect(center=(WIDTH // 2.07, 250))
     screen.blit(start_img, start_rect)
 
     draw_button("", WIDTH // 2 - 50, 350, 50, 20, GRAY, lambda: set_state("load_game"))
-    load_img = pygame.image.load("LOAD.png").convert_alpha()
+    load_img = pygame.image.load("PIC BOUTONS/LOAD.png").convert_alpha()
     load_img = pygame.transform.scale(load_img, (250, 100))
     load_rect = load_img.get_rect(center=(WIDTH // 2.07, 350))
     screen.blit(load_img, load_rect)
@@ -410,7 +410,7 @@ def back_to_menu():
 def game_screen():
     global game_state, camera_x, score, score_increased
 
-    background_img = pygame.image.load("BACKGB.png").convert()
+    background_img = pygame.image.load("PIC BOUTONS/BACKGB.png").convert()
     background_img = pygame.transform.scale(background_img, (800, HEIGHT))
     for i in range((WIDTH // background_img.get_width()) + 2):  # +2 to cover edges while scrolling
         screen.blit(background_img, (i * background_img.get_width() - (camera_x % background_img.get_width()), 0))
