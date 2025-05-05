@@ -1,12 +1,9 @@
 import pygame
 import random
-import time
-import math
-
 
 # Pygame Initialization
 pygame.init()
-WIDTH, HEIGHT = 800,600
+WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
@@ -122,22 +119,12 @@ def generate_platforms():
     return [
         Platform(100, 400, 150, 20),
         Platform(300, 400, 200, 20),
+        #Platform(700, 300, 30, 700),
+        #Platform(1200, 400, 100, 20),
         Platform(200, 400, 150, 20),
-        Platform(500, 300, 100, 20),
-        Platform(700, 300, 100, 20),
         Platform(2000, 500, 200, 20),
         Platform(2300, 400, 150, 20),
-        Platform(3000, 400, 100, 20),
-        Platform(3500, 400, 100, 20),
-        Platform(4000, 400, 100, 20),
-        Platform(4500, 400, 150, 20),
-        Platform(5000, 400, 100, 20),
-        Platform(5500, 500, 150, 20),
-        Platform(6000, 400, 100, 20),
-        Platform(6500, 400, 150, 20),
-        Platform(7000, 500, 150, 20),
-        Platform(7500, 400, 100, 20)
-
+        Platform(2500, 400, 100, 20)
     ]
 
 
