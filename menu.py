@@ -48,7 +48,9 @@ class Rope(pygame.sprite.Sprite):
         super().__init__()
         self.anchor = pygame.Vector2(x, y)
         self.length = None
-
+        self.image = pygame.image.load("PIC BOUTONS/torch.png").convert_alpha()  # or your texture file
+        self.image = pygame.transform.scale(self.image, (30, 30))  # Resize if needed
+        self.rect = self.image.get_rect(center=(self.anchor.x, self.anchor.y))
     def attach(self, ball):
         self.length = (ball.pos - self.anchor).length()
         ball.is_attached, ball.attached_rope = True, self
@@ -297,10 +299,7 @@ def start_game():
     finish_line = pygame.Rect(4200,0,20,HEIGHT)
 
 def menu_screen():
-    WIDTH, HEIGHT = 800, 600
-    background_img = pygame.image.load("PIC BOUTONS/BACKG.png")  # Changez le nom selon votre fichier
-    background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
-    screen.blit(background_img, (0, 0))
+
     logo_img = pygame.image.load("PIC BOUTONS/LOGO.png")
 
     logo_img = pygame.transform.scale(logo_img, (500, 200))
@@ -409,12 +408,8 @@ def back_to_menu():
 
 def game_screen():
     global game_state, camera_x, score, score_increased
+    screen.fill(BLACK)
 
-    background_img = pygame.image.load("PIC BOUTONS/BACKGB.png").convert()
-    background_img = pygame.transform.scale(background_img, (800, HEIGHT))
-    for i in range((WIDTH // background_img.get_width()) + 2):  # +2 to cover edges while scrolling
-        screen.blit(background_img, (i * background_img.get_width() - (camera_x % background_img.get_width()), 0))
-    screen.blit(background_img, (-camera_x, 0))
 
     keys = pygame.key.get_pressed()
     ball.update(keys, platforms,slopes)
