@@ -270,7 +270,7 @@ def game_over_screen():
     screen.blit(background_img, (0, 0))
 
 
-    draw_button(screen, "Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 150, 50, GRAY, small_font, lambda: start_game_by_index(current_game_index))
+    draw_button(screen, "Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 150, 50, GRAY, small_font, lambda: start_game_by_index(current_level_index))
     load_img = pygame.image.load("boutons/RESTART.png").convert_alpha()
     load_img = pygame.transform.scale(load_img, (210, 90))
     load_rect = load_img.get_rect(center=(WIDTH // 2.05, 420))
@@ -287,7 +287,7 @@ def win_level_screen():
     background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
     screen.blit(background_img, (0, 0))
 
-    draw_button(screen, "Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, small_font, lambda: start_game("easy"))
+    draw_button(screen, "Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, small_font, lambda: start_game_by_index(current_level_index))
 
     draw_button(screen, "Menu", WIDTH // 2 - 100, HEIGHT // 2 + 170, 200, 50, GRAY, small_font, lambda: set_state("menu"))
 
