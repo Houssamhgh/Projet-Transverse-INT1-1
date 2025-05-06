@@ -1,39 +1,66 @@
 import pygame
-import random
-import math
 import sys
+import math
+import random
 
-# Initialisation globale de pygame
 pygame.init()
 
-# Configuration de l'écran
-WIDTH, HEIGHT = 800, 600
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+screen_width = 800
+screen_height = 600
+screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Spidey Hook")
-clock = pygame.time.Clock()
 
-# Couleurs
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (200, 200, 200)
 BLUE = (0, 0, 255)
 RED = (255, 0, 0)
-GREEN = (0, 255, 0)
 
-# Polices
 font = pygame.font.SysFont("Comic Sans MS", 80)
 small_font = pygame.font.SysFont("Arial", 30)
 
-# Variables du jeu
-game_state = "menu"  # menu, playing, game_over
-MASS = 0.05
-GRAVITATIONAL_CONST = 9.81
-GRAVITY = MASS * GRAVITATIONAL_CONST
-SPACE_BETWEEN_ROPES = 300
-CAMERA_OFFSET = WIDTH // 3
-ON_GROUND = False
+background_color = (30, 30, 30)
 
-# Variables du menu
+def render_text(text, font, color, x, y):
+    text_surface = font.render(text, True, color)
+    text_rect = text_surface.get_rect(center=(x, y))
+    screen.blit(text_surface, text_rect)
+
+
+class Spider:
+    def __init__(self):
+        self.x = random.randint(0, screen_width)
+        self.y = random.randint(0, screen_height)
+        self.speed_x = random.choice([-1, 1]) * random.randint(1, 3)
+        self.speed_y = random.choice([-1, 1]) * random.randint(1, 3)
+
+    def move(self):
+        self.x += self.speed_x
+        self.y += self.speed_y
+
+        if self.x < 0 or self.x > screen_width:
+            self.speed_x = -self.speed_x
+        if self.y < 0 or self.y > screen_height:
+            self.speed_y = -self.speed_y
+
+    def draw(self):
+        pygame.draw.circle(screen, WHITE, (self.x, self.y), 10)
+
+
+spiders = [Spider() for _ in range(5)]
+
+def draw_spider_web():
+    center_x, center_y = screen_width // 2, screen_height // 2
+    num_lines = 10
+    for i in range(1, num_lines + 1):
+        pygame.draw.circle(screen, WHITE, (center_x, center_y), i * 40, 2)
+
+    for i in range(0, 360, 30):
+        x1 = center_x + 40 * num_lines * math.cos(math.radians(i))
+        y1 = center_y + 40 * num_lines * math.sin(math.radians(i))
+        pygame.draw.line(screen, WHITE, (center_x, center_y), (x1, y1), 2)
+
+game_state = "menu"
 music_on = True
 sounds_on = True
 player_name = ""
@@ -41,463 +68,181 @@ best_scores = {}
 selected_music = "Track 1"
 input_text = ""
 
-
-
-class Rope(pygame.sprite.Sprite):
-    def __init__(self, x, y):
-        super().__init__()
-        self.anchor = pygame.Vector2(x, y)
-        self.length = None
-        self.image = pygame.image.load("PIC BOUTONS/torch.png").convert_alpha()  # or your texture file
-        self.image = pygame.transform.scale(self.image, (30, 30))  # Resize if needed
-        self.rect = self.image.get_rect(center=(self.anchor.x, self.anchor.y))
-    def attach(self, ball):
-        self.length = (ball.pos - self.anchor).length()
-        ball.is_attached, ball.attached_rope = True, self
-        ball.initial_velocity = ball.velocity.length()
-
-    def update(self, ball):
-        if ball.is_attached and ball.attached_rope == self:
-            keys= pygame.key.get_pressed()
-            if keys[pygame.K_SPACE]:
-                self.length = max(10,self.length-2)
-            direction = ball.pos - self.anchor
-            distance = direction.length()
-            if distance > self.length:
-                ball.pos = self.anchor + direction.normalize() * self.length
-
-
-    def draw(self, screen, ball, camera_x):
-        if ball.is_attached and ball.attached_rope == self:
-            pygame.draw.line(screen, WHITE,
-                             (self.anchor.x - camera_x, self.anchor.y),
-                             (ball.pos.x - camera_x, ball.pos.y), 3)
-        if ball.pos.x<4100:
-            pygame.draw.circle(screen, (0, 255, 0), (self.anchor.x - camera_x, self.anchor.y), 6)
-
-class Ball(pygame.sprite.Sprite):
-    def __init__(self, x, y, radius=10):
-        super().__init__()
-        self.pos = pygame.Vector2(x, y)
-        self.radius = radius
-        self.velocity = pygame.Vector2(8, 5)
-        self.is_attached = False
-        self.attached_rope = None
-        self.state = ON_GROUND
-        self.mass = 1.0
-        self.is_alive=True
-
-    def update(self, keys, platforms,slopes):
-        if not self.is_alive:
-            return
-        if keys[pygame.K_SPACE]:
-            if not self.is_attached:
-                closest_rope = min(ropes, key=lambda rope: abs(rope.anchor.x - self.pos.x))
-                closest_rope.attach(self)
-        else:
-            self.is_attached = False
-            self.attached_rope = None
-
-
-        if self.pos.y - self.radius < 0:
-            self.pos.y = self.radius
-            self.velocity.y = 0
-
-        if self.is_attached:
-            direction = self.pos - self.attached_rope.anchor
-            distance = direction.length()
-            if distance > 0:
-                direction.normalize_ip()
-                theta = math.atan2(direction.x, direction.y)
-                force_tangential = self.mass * GRAVITY * math.sin(theta)
-                tangent = pygame.Vector2(-direction.y, direction.x)
-                self.velocity += tangent * force_tangential
-                self.pos += self.velocity
-                current_distance = (self.pos - self.attached_rope.anchor).length()
-                if abs(current_distance - self.attached_rope.length) > 1:
-                    correction = direction * (self.attached_rope.length - current_distance)
-                    self.pos += correction
-                    self.velocity -= direction * direction.dot(self.velocity)
-        else:
-            self.velocity.y += GRAVITY
-            self.pos += self.velocity
-
-        if self.pos.y >= HEIGHT - self.radius:
-            self.pos.y = HEIGHT - self.radius
-            self.velocity.y = 0
-            self.state = ON_GROUND
-
-        for platform in platforms:
-            if platform.rect.colliderect(pygame.Rect(self.pos.x - self.radius, self.pos.y - self.radius,
-                                                     self.radius * 2, self.radius * 2)):
-
-                if platform.bouncy:
-                    self.velocity.y = -self.velocity.y * 1.5
-                    self.state = ON_GROUND
-                    self.is_attached = False
-                else:
-                    self.state = ON_GROUND
-                    self.is_attached = False
-                    self.is_alive = False
-                    self.kill()
-                    break
-
-        for slope in slopes:
-            slope.check_collision_and_bounce(ball)
-
-    def draw(self, screen, camera_x):
-        self.image = pygame.image.load("PIC BOUTONS/spider.png").convert_alpha()
-        self.image = pygame.transform.scale(self.image, (self.radius * 3.7, self.radius * 3.7))
-        screen.blit(self.image, (self.pos.x - camera_x - self.radius, self.pos.y - self.radius))
-
-
-class SlopedPlatform (pygame.sprite.Sprite):
-    def __init__(self, x1, y1, x2, y2, bouncy=True):
-        super().__init__()
-        self.start = pygame.Vector2(x1, y1)
-        self.end = pygame.Vector2(x2, y2)
-        self.bouncy = bouncy
-        self.thickness = 8
-        self.color = (0, 255, 0) if bouncy else (255, 0, 0)
-
-    def draw(self, screen, camera_x):
-        start = self.start - pygame.Vector2(camera_x, 0)
-        end = self.end - pygame.Vector2(camera_x, 0)
-        pygame.draw.line(screen, self.color, start, end, self.thickness)
-
-    def check_collision_and_bounce(self, ball):
-        # Vecteur de la pente
-        line_vec = self.end - self.start
-        line_unit = line_vec.normalize()
-        normal = pygame.Vector2(-line_unit.y, line_unit.x)
-
-        # Projection du centre de la balle sur la pente
-        ball_to_start = ball.pos - self.start
-        proj_length = ball_to_start.dot(line_unit)
-        proj_length_clamped = max(0, min(proj_length, line_vec.length()))
-        closest_point = self.start + proj_length_clamped * line_unit
-
-        # Distance entre la balle et la pente
-        delta = ball.pos - closest_point
-        distance = delta.length()
-
-        if distance < ball.radius:
-            # Vérifie que la balle va vers la pente (collision réelle)
-            if ball.velocity.dot(normal) > 0:
-                # Calcule la pénétration exacte
-                penetration_depth = ball.radius - distance
-                if distance != 0:
-                    correction_vector = delta.normalize() * penetration_depth
-                else:
-                    correction_vector = normal * penetration_depth
-
-                ball.pos += correction_vector
-
-                if self.bouncy:
-                    # Rebond réaliste
-                    ball.velocity = ball.velocity.reflect(normal) * 1.2
-                    return True
-                else:
-                    ball.is_alive = False
-                    ball.kill()
-                    return False  # rebond non effectué
-        return False
-
-
-class Platform(pygame.sprite.Sprite):
-    def __init__(self, x, y, width, height, bouncy=False):
-        super().__init__()
-        self.rect = pygame.Rect(x, y, width, height)
-        self.vel_y = 0
-        self.gravity = 0.5
-        self.jump_strength = -10
-        self.bouncy= bouncy
-
-    def draw(self, screen, camera_x):
-        if self.bouncy:
-            pygame.draw.rect(screen, GREEN, self.rect.move(-camera_x, 0))
-        else:
-            pygame.draw.rect(screen, RED, self.rect.move(-camera_x, 0))
-
-def generate_rope_chain():
-    return [
-        Rope(600, 50),
-        Rope(1000, 150),
-        Rope(1300, 200),
-        Rope(2000, 100),
-        Rope(2700, 70),
-        Rope(3200, 100),
-        Rope(3700, 80),
-        Rope(4000, 50),
-        Rope(5000, 100),
-        ]
-
-def generate_platforms():
-    return [
-        Platform(615, 400, 150, 10,bouncy=True),
-        Platform(1050, 400, 150, 20,bouncy=False),
-        Platform(1800, 400, 150, 20,bouncy=True),
-        Platform(2700, 400, 150, 20,bouncy=False),
-        Platform(3600, 400, 150, 20,bouncy=True),
-
-    ]
-def generate_slopes():
-    return[
-        SlopedPlatform(350, 300, 600, 400),
-        SlopedPlatform(350, 100, 350,300 ),
-        SlopedPlatform(4000,400, 4000, 300 ),
-    ]
-
-
-def render_text(text, font, color, x, y):
-    text_surface = font.render(text, True, color)
-    text_rect = text_surface.get_rect(center=(x, y))
-    screen.blit(text_surface, text_rect)
-
 def draw_button(text, x, y, width, height, color, action=None):
     mouse_pos = pygame.mouse.get_pos()
     mouse_click = pygame.mouse.get_pressed()
 
-    button_rect = pygame.Rect(x, y, width, height)
-    pygame.draw.rect(screen, color, button_rect)
-
-    if button_rect.collidepoint(mouse_pos):
-        pygame.draw.rect(screen, BLUE, button_rect, 3)
+    # Vérifier si la souris est sur le bouton
+    if x < mouse_pos[0] < x + width and y < mouse_pos[1] < y + height:
+        pygame.draw.rect(screen, BLUE, (x, y, width, height))
         if mouse_click[0] == 1 and action is not None:
-            pygame.time.delay(100)
             action()
+    else:
+        pygame.draw.rect(screen, color, (x, y, width, height))
+
 
     text_surface = small_font.render(text, True, WHITE)
-    text_rect = text_surface.get_rect(center=button_rect.center)
+    text_rect = text_surface.get_rect(center=(x + width // 2, y + height // 2))
     screen.blit(text_surface, text_rect)
+
+
+def start_game():
+    global game_state
+    game_state = "playing"
+
+
+def load_game():
+    global game_state, input_text
+    game_state = "load_game"
+    input_text = ""
+
+def settings():
+    global game_state
+    game_state = "settings"
+
+def music_settings():
+    global game_state
+    game_state = "music_settings"
 
 def toggle_music():
     global music_on
     music_on = not music_on
+    print("Musique:", "Activée" if music_on else "Désactivée")
 
 def toggle_sounds():
     global sounds_on
     sounds_on = not sounds_on
+    print("Sons:", "Activés" if sounds_on else "Désactivés")
+
+
+def draw_button(text, x, y, width, height, color, action):
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+
+    button_rect = pygame.Rect(x, y, width, height)
+
+    if button_rect.collidepoint(mouse):
+        if click[0] == 1:  # Si le bouton gauche est enfoncé
+            pygame.time.wait(200)  # Attendre pour éviter les clics multiples
+            action()  # Exécute l'action
+
+    pygame.draw.rect(screen, color, button_rect)
+    render_text(text, small_font, (255, 255, 255), x + width // 2, y + height // 2)
 
 def change_music(track):
     global selected_music
     selected_music = track
     print(f"Musique changée: {selected_music}")
 
+def menu():
+    screen.fill(background_color)
+    draw_spider_web()
+
+    # Centrer le titre "Spidey Hook"
+    title_text = "Spidey Hook"
+    title_surface = font.render(title_text, True, RED)
+    title_rect = title_surface.get_rect(center=(screen_width // 2, 100))  # Centrer le texte horizontalement
+    screen.blit(title_surface, title_rect)
+
+    # Centrer les boutons du menu
+    draw_button("Start Game", screen_width // 2 - 100, 200, 200, 50, GRAY, start_game)
+    draw_button("Load Game", screen_width // 2 - 100, 300, 200, 50, GRAY, load_game)
+    draw_button("Settings", 20, screen_height-70, 200, 50, GRAY, settings)
+
+    # Faire bouger les araignées
+    for spider in spiders:
+        spider.move()
+        spider.draw()
+
+def settings_menu():
+    screen.fill(background_color)
+    render_text("Settings", font, RED, screen_width // 2, 100)  # Centré avec render_text
+
+    # Aligner les boutons et les textes avec le titre
+    button_width = 200
+    button_height = 50
+    button_x = screen_width // 2 - button_width // 2  # Centrer les boutons par rapport à l'écran
+
+    draw_button(f"Music: {'On' if music_on else 'Off'}", button_x, 200, button_width, button_height, GRAY, toggle_music)
+    draw_button(f"Sounds: {'On' if sounds_on else 'Off'}", button_x, 300, button_width, button_height, GRAY, toggle_sounds)
+    draw_button("Change Music", button_x, 400, button_width, button_height, GRAY, music_settings)
+    draw_button("Back", button_x, 500, button_width, button_height, GRAY, lambda: set_state("menu"))
+
+def music_selection_menu():
+    screen.fill(background_color)
+
+    # Centrer le titre "Select Music Track"
+    render_text("Select Music Track", font, RED, screen_width // 2, 100)  # Centré avec render_text
+
+    # Centrer le texte "Current Music"
+    render_text(f"Current Music: {selected_music}", small_font, WHITE, screen_width // 2, 150)
+
+    # Définir la largeur des boutons et la hauteur pour les centrer
+    button_width = 200
+    button_height = 50
+    button_x = screen_width // 2 - button_width // 2  # Centrer horizontalement les boutons
+
+    # Centrer les boutons
+    draw_button("Track 1", button_x, 250, button_width, button_height, GRAY, lambda: change_music("Track 1"))
+    draw_button("Track 2", button_x, 320, button_width, button_height, GRAY, lambda: change_music("Track 2"))
+    draw_button("Track 3", button_x, 390, button_width, button_height, GRAY, lambda: change_music("Track 3"))
+    draw_button("Back", button_x, 460, button_width, button_height, GRAY, lambda: set_state("settings"))
+
+
+def load_game_screen():
+    global input_text
+    screen.fill(background_color)
+
+    render_text("Choose your level:", font, RED, screen_width // 2, 100)
+
+
+
+    draw_button("Easy", 25, screen_height//3, 150, 150, GRAY, lambda: set_state("playing"))
+    draw_button("Normal", 325, screen_height // 3, 150, 150, GRAY, lambda: set_state("playing"))
+    draw_button("Hard", 625, screen_height // 3, 150, 150, GRAY, lambda: set_state("playing"))
+    draw_button("Back", screen_width-220, screen_height-70, 200, 50, GRAY, lambda: set_state("menu"))
+
 def set_state(state):
     global game_state
     game_state = state
 
-def start_game():
-    global game_state, ball, ropes, platforms, slopes, camera_x,finish_line
-    game_state = "playing"
-    ball = Ball(WIDTH // 2, HEIGHT // 2)
-    ropes = generate_rope_chain()
-    platforms = generate_platforms()
-    slopes = generate_slopes()
-    camera_x = 0
-    finish_line = pygame.Rect(4200,0,20,HEIGHT)
-
-def menu_screen():
-
-    logo_img = pygame.image.load("PIC BOUTONS/LOGO.png")
-
-    logo_img = pygame.transform.scale(logo_img, (500, 200))
-    screen.blit(logo_img, (WIDTH // 2 - logo_img.get_width() // 2, 50))
-
-    draw_button("Start Game", WIDTH // 2 - 50, 250, 50, 20, GRAY, start_game)
-    start_img = pygame.image.load("PIC BOUTONS/START.png").convert_alpha()
-    start_img = pygame.transform.scale(start_img, (240, 80))
-    start_rect = start_img.get_rect(center=(WIDTH // 2.07, 250))
-    screen.blit(start_img, start_rect)
-
-    draw_button("", WIDTH // 2 - 50, 350, 50, 20, GRAY, lambda: set_state("load_game"))
-    load_img = pygame.image.load("PIC BOUTONS/LOAD.png").convert_alpha()
-    load_img = pygame.transform.scale(load_img, (250, 100))
-    load_rect = load_img.get_rect(center=(WIDTH // 2.07, 350))
-    screen.blit(load_img, load_rect)
-    draw_button("Settings", 30, HEIGHT-100, 200, 50, GRAY, lambda: set_state("settings"))
-    set_img = pygame.image
-
-
-def settings_screen():
-    screen.fill(BLACK)
-    render_text("Settings", font, RED, WIDTH // 2, 100)
-
-    button_width = 200
-    button_height = 50
-    button_x = WIDTH // 2 - button_width // 2
-
-    draw_button(f"Music: {'On' if music_on else 'Off'}", button_x, 200, button_width, button_height, GRAY, toggle_music)
-    draw_button(f"Sounds: {'On' if sounds_on else 'Off'}", button_x, 300, button_width, button_height, GRAY, toggle_sounds)
-    draw_button(f"Change Music", button_x, 400, button_width, button_height, GRAY,
-                change_music)
-    draw_button("Back", button_x, 500, button_width, button_height, GRAY, lambda: set_state("menu"))
-
-def draw_text(text, x, y, font_size, color):
-    font = pygame.font.Font(None, font_size)
-    text_surface = font.render(text, True, color)
-    screen.blit(text_surface, (x, y))
-
-def load_game_screen():
-    # Set background color to black
-    screen.fill((0, 0, 0))  # RGB for black
-    # Font settings for the title
-    font = pygame.font.SysFont("Comic Sans MS", 80)
-    title_text = font.render("Choose Your Level", True, (255, 0, 0))  # Red color for title text
-    title_rect = title_text.get_rect(center=(WIDTH // 2, 100))  # Center title near the top
-
-    # Draw the centered title on the screen
-    screen.blit(title_text, title_rect)
-
-    # Level buttons as squares
-    levels = ["Easy", "Normal", "Hard"]
-    button_size = 150  # Size of the square buttons
-    spacing = 100  # Increased space between buttons
-
-    # Positions for the buttons with increased spacing
-    positions = [
-        (WIDTH // 3 - button_size // 2 - (spacing // 2), HEIGHT // 2 - button_size // 2),  # Easy
-        (WIDTH // 2 - button_size // 2, HEIGHT // 2 - button_size // 2),  # Normal
-        (2 * WIDTH // 3 - button_size // 2 + (spacing // 2), HEIGHT // 2 - button_size // 2)  # Hard
-    ]
-
-    for i, level in enumerate(levels):
-        if not check_save_exists(level):
-            print(f"Aucune partie sauvegardée trouvée pour la difficulté {level}")
-        draw_button(level, *positions[i], button_size, button_size, (200, 200, 200), lambda l=level: load_saved_game(l))
-
-    # Update display after drawing everything
-    pygame.display.flip()
-
-def check_save_exists(level):
-    # Placeholder for your logic to check if a save exists for the given level
-    # For example, you could check for a file named "save_<level>.txt"
-    return False  # Change this based on your logic
-
-import json
-
-def load_saved_game(difficulty):
-    try:
-        with open(f"save_{difficulty}.json", "r") as file:
-            data = json.load(file)
-            print(f"Partie sauvegardée chargée pour la difficulté {difficulty} : {data}")
-            init_game_from_data(data)
-            set_state("game")
-    except FileNotFoundError:
-        print(f"Aucune partie sauvegardée trouvée pour la difficulté {difficulty}")
-        # Provide feedback to the player using pygame functions instead of print
-        render_text(f"No saved game for {difficulty}. Starting fresh.", font, WHITE, WIDTH // 2, HEIGHT // 3)
-        set_state("menu")  # Return to menu or create a new game.
-    except json.JSONDecodeError:
-        print(f"Error decoding JSON for difficulty {difficulty}.")
-        # Handle corrupted file scenario and inform the player
-
-def init_game_from_data(data):
-    global score, player_name
-    score = data.get("score", 0)  # Valeur par défaut à 0 si aucune donnée
-    player_name = data.get("player_name", "Unknown")
-    # Si tu as d'autres données comme le niveau, initialise-les aussi.
-    level = data.get("level", 1)
-    # Tu peux utiliser ces données pour ajuster l'état du jeu, comme le niveau
-
-
-def back_to_menu():
-    set_state("menu")
-
-
-def game_screen():
-    global game_state, camera_x, score, score_increased
-    screen.fill(BLACK)
-
-
-    keys = pygame.key.get_pressed()
-    ball.update(keys, platforms,slopes)
-    camera_x = ball.pos.x - CAMERA_OFFSET
-
-    if ball.pos.y >= HEIGHT - ball.radius or ball.is_alive==False:
-        game_state = "game_over"
-
-    # Crée un rectangle représentant la balle
-    ball_rect = pygame.Rect(ball.pos.x - ball.radius, ball.pos.y - ball.radius,
-                            ball.radius * 2, ball.radius * 2)
-
-    # Vérifie la collision avec la ligne d'arrivée
-    if ball_rect.colliderect(finish_line):
-        game_state = "win_level"
-
-    for rope in ropes:
-        rope.update(ball)
-
-    if ropes[-1].anchor.x - camera_x < WIDTH:
-        ropes.append(Rope(ropes[-1].anchor.x + SPACE_BETWEEN_ROPES, HEIGHT // 4 + random.randint(-50, 50)))
-
-
-
-    for rope in ropes:
-        rope.draw(screen, ball, camera_x)
-    ball.draw(screen, camera_x)
-
-    for platform in platforms:
-        platform.draw(screen, camera_x)
-
-    for slope in slopes:
-        slope.draw(screen, camera_x)
-
-    pygame.draw.rect(screen, (0, 255, 0),
-                     pygame.Rect(finish_line.x - camera_x, finish_line.y,
-                                 finish_line.width, finish_line.height))
-
-    draw_button("Menu", WIDTH - 120, 20, 100, 40, GRAY, lambda: set_state("menu"))
+def main_loop():
+    global game_state, input_text
     clock = pygame.time.Clock()
-    clock.tick(80)
-def game_over_screen():
-    screen.fill(BLACK)
-    render_text("Game Over", font, RED, WIDTH // 2, HEIGHT // 3)
-    draw_button("Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, start_game)
-    draw_button("Menu", WIDTH // 2 - 100, HEIGHT // 2 + 170, 200, 50, GRAY, lambda: set_state("menu"))
+    running = True
 
-def win_level_screen():
-    screen.fill(BLACK)
-    render_text("Congratulations", font, BLUE, WIDTH // 2, HEIGHT // 3)
-    draw_button("Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, start_game)
-    draw_button("Menu", WIDTH // 2 - 100, HEIGHT // 2 + 170, 200, 50, GRAY, lambda: set_state("menu"))
-# Initialisation des objets du jeu
-ball = Ball(WIDTH // 2, HEIGHT // 2)
-ropes = generate_rope_chain()
-platforms = generate_platforms()
-slopes=generate_slopes()
-camera_x = 0
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif game_state == "load_game" and event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    set_state("playing")
+                elif event.key == pygame.K_BACKSPACE:
+                    input_text = input_text[:-1]
+                else:
+                    input_text += event.unicode
 
-# Boucle principale
-running = True
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif game_state == "load_game" and event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_RETURN:
-                start_game()
-            elif event.key == pygame.K_BACKSPACE:
-                input_text = input_text[:-1]
-            else:
-                input_text += event.unicode
+        if game_state == "menu":
+            menu()
+        elif game_state == "settings":
+            settings_menu()
+        elif game_state == "music_settings":
+            music_selection_menu()
+        elif game_state == "load_game":
+            load_game_screen()
+        elif game_state == "playing":
+            screen.fill(background_color)
+            render_text("Game in progress...", small_font, WHITE, screen_width // 2 - 150, screen_height // 2)
+            draw_button("Back to Menu", 500, 500, 200, 50, GRAY, lambda: set_state("menu"))
 
-    if game_state == "menu":
-        menu_screen()
-    elif game_state == "settings":
-        settings_screen()
-    elif game_state == "load_game":
-        load_game_screen()
-    elif game_state == "playing":
-        game_screen()
-    elif game_state == "win_level":
-        win_level_screen()
-    elif game_state == "game_over":
-        game_over_screen()
+        pygame.display.flip()
+        clock.tick(30)
 
-    pygame.display.flip()
-    clock.tick(60)
+    pygame.quit()
+    sys.exit()
 
-pygame.quit()
-sys.exit()
+if __name__ == "__main__":
+    main_loop()
+
+
