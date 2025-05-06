@@ -61,8 +61,10 @@ def change_music():
     print(f"Musique changée: {selected_music}")
 
 def start_game(difficulty='easy'):
+    global current_level_index
     index_map = {'easy': 0, 'medium': 1, 'hard': 2}
     index = index_map.get(difficulty, 0)
+    current_level_index = index
     start_game_by_index(index)
 
 def start_game_by_index(index):
@@ -268,7 +270,7 @@ def game_over_screen():
     screen.blit(background_img, (0, 0))
 
 
-    draw_button(screen, "Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 150, 50, GRAY, small_font, lambda: start_game("easy"))
+    draw_button(screen, "Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 150, 50, GRAY, small_font, lambda: start_game_by_index(current_game_index))
     load_img = pygame.image.load("boutons/RESTART.png").convert_alpha()
     load_img = pygame.transform.scale(load_img, (210, 90))
     load_rect = load_img.get_rect(center=(WIDTH // 2.05, 420))
