@@ -2,8 +2,9 @@
 import sys
 import random
 import math
+import pygame
 from settings import *
-from utils import Spider, Ball, generate_rope_chain, generate_platforms, generate_slopes, Rope, SoundManager
+from utils import  Ball, generate_rope_chain, generate_platforms, generate_slopes, Rope
 from ui import render_text, draw_button, draw_trajectory, draw_direction_arrow
 
 # Initialisation pygame
@@ -11,7 +12,7 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Spidey Hook")
 clock = pygame.time.Clock()
-sound_manager = SoundManager()
+
 
 # Etat global
 game_state = "menu"
@@ -36,24 +37,14 @@ slopes = generate_slopes(current_level_index)
 finish_line = pygame.Rect(4200, 0, 20, HEIGHT)
 
 # Araignées dans le menu
-spiders = [Spider() for _ in range(5)]
+
 
 
 def set_state(state):
     global game_state
     game_state = state
-    if sounds_on:
-        if state == "menu":
-            sound_manager.play_sound("starting_sound")
-        elif state == "game_over":
-            sound_manager.play_sound("gameover_sound")
-        elif state == "win_level":
-            sound_manager.play_sound("win_sound")
-    if music_on:
-        if state == "menu":
-            sound_manager.play_music(selected_music.lower().replace(" ", ""), loop=True)
-        elif state in ("game_over", "win_level"):
-            sound_manager.stop_music()
+
+
 
 def toggle_music():
     global music_on
@@ -84,24 +75,35 @@ def start_game_by_index(index):
     finish_line = pygame.Rect(4200, 0, 20, HEIGHT)
     camera_x = 0
     initial_velocity = pygame.Vector2(0, 0)
-    if sounds_on:
-        sound_manager.play_sound("starting_sound")
-    if music_on:
-        sound_manager.play_music(selected_music.lower().replace(" ", ""), loop=True)
+
     # Début avec une vitesse nulle
     game_state = "aiming"  # Lancement directement dans l'écran d'aiming
 
 def menu_screen():
 
+    WIDTH, HEIGHT = 800, 600
+    background_img = pygame.image.load("boutons/MENU_NEW.png")  # Changez le nom selon votre fichier
+    background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
+    screen.blit(background_img, (0, 0))
 
-    render_text("Spidey Hook", font, RED, WIDTH // 2, 100, screen)
-    draw_button(screen, "Start Game", WIDTH // 2 - 100, 200, 200, 50, GRAY, small_font, lambda: start_game("easy"))
-    draw_button(screen, "Load Game", WIDTH // 2 - 100, 300, 200, 50, GRAY, small_font, lambda: set_state("load_game"))
+    draw_button(screen, "Start Game", WIDTH // 2 - 100, 230, 190, 50, GRAY, small_font, lambda: start_game("easy"))
+    start_img = pygame.image.load("boutons/START.png").convert_alpha()
+    start_img = pygame.transform.scale(start_img, (240, 100))
+    start_rect = start_img.get_rect(center=(WIDTH // 2.07, 250))
+    screen.blit(start_img, start_rect)
+
+    draw_button(screen, "Load Game", WIDTH // 2 - 100, 350, 190, 50, GRAY, small_font, lambda: set_state("load_game"))
+    load_img = pygame.image.load("boutons/LOAD.png").convert_alpha()
+    load_img = pygame.transform.scale(load_img, (240, 100))
+    load_rect = load_img.get_rect(center=(WIDTH // 2.05, 375))
+    screen.blit(load_img, load_rect)
+
     draw_button(screen, "Settings", 20, HEIGHT - 70, 200, 50, GRAY, small_font, lambda: set_state("settings"))
+    load_img = pygame.image.load("boutons/SET.png").convert_alpha()
+    load_img = pygame.transform.scale(load_img, (240, 100))
+    load_rect = load_img.get_rect(center=(WIDTH // 6.3, 550))
+    screen.blit(load_img, load_rect)
 
-    for spider in spiders:
-        spider.move()
-        spider.draw(screen)
 
 camera_x = 0  # Global
 
@@ -123,9 +125,12 @@ def draw_aiming_arrow(start_pos, direction, color, length=100, segment_length=10
 def aiming_screen():
     global initial_velocity, game_state, ball, camera_x  # Ajout de camera_x ici
 
-    screen.fill(BLACK)
+    WIDTH, HEIGHT = 800, 600
+    background_img = pygame.image.load("boutons/BACKGB.png")  # Changez le nom selon votre fichier
+    background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
+    screen.blit(background_img, (0, 0))
 
-    render_text("Utilise les flèches pour viser, puis Entrée/Espace pour tirer", small_font, RED, WIDTH // 2, 50, screen)
+    render_text("Utilise les flèches pour viser, puis Entrée pour tirer", small_font, RED, WIDTH // 2, 50, screen)
 
     # Gestion des touches
     keys = pygame.key.get_pressed()
@@ -161,22 +166,64 @@ def aiming_screen():
 
 
 def settings_screen():
-    screen.fill(BLACK)
-    render_text("Settings", font, RED, WIDTH // 2, 100, screen)
+    WIDTH, HEIGHT = 800, 600
+    background_img = pygame.image.load("boutons/SETBG.png")  # Changez le nom selon votre fichier
+    background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
+    screen.blit(background_img, (0, 0))
+
     x = WIDTH // 2 - 100
-    draw_button(screen, f"Music: {'On' if music_on else 'Off'}", x, 200, 200, 50, GRAY, small_font, toggle_music)
-    draw_button(screen, f"Sounds: {'On' if sounds_on else 'Off'}", x, 300, 200, 50, GRAY, small_font, toggle_sounds)
-    draw_button(screen, "Change Music", x, 400, 200, 50, GRAY, small_font, change_music)
-    draw_button(screen, "Back", x, 500, 200, 50, GRAY, small_font, lambda: set_state("menu"))
+    draw_button(screen, f"MusicS   {'On' if music_on else 'Off'}", 432, 220 , 50, 45, GRAY, small_font, toggle_music)
+    load_img = pygame.image.load("boutons/MUSIC.png").convert_alpha()
+    load_img = pygame.transform.scale(load_img, (205, 85))
+    load_rect = load_img.get_rect(center=(WIDTH // 2.05, 243))
+    screen.blit(load_img, load_rect)
 
+    draw_button(screen, f"Sounds : {'On' if sounds_on else 'Off'}", 436, 300, 50, 42, GRAY, small_font, toggle_sounds)
+    load_img = pygame.image.load("boutons/SOUND.png").convert_alpha()
+    load_img = pygame.transform.scale(load_img, (200, 80))
+    load_rect = load_img.get_rect(center=(WIDTH // 2, 333))
+    screen.blit(load_img, load_rect)
+
+    draw_button(screen, "Change Music", 350, 400, 120, 40, GRAY, small_font, change_music)
+    load_img = pygame.image.load("boutons/CHANGE MUSIC.png").convert_alpha()
+    load_img = pygame.transform.scale(load_img, (220, 80))
+    load_rect = load_img.get_rect(center=(WIDTH // 2, 430))
+    screen.blit(load_img, load_rect)
+
+    draw_button(screen, "Back", 350, 500, 120, 40, GRAY, small_font, lambda: set_state("menu"))
+    load_img = pygame.image.load("boutons/BACK.png").convert_alpha()
+    load_img = pygame.transform.scale(load_img, (200, 80))
+    load_rect = load_img.get_rect(center=(WIDTH // 2, 525))
+    screen.blit(load_img, load_rect)
 def load_game_screen():
-    screen.fill(BLACK)
-    render_text("Choose your level:", font, RED, WIDTH // 2, 100, screen)
-    draw_button(screen, "Easy", WIDTH // 3 - 150 // 2 - (100 // 2), HEIGHT // 2 - 150 // 2, 150, 150, GRAY, small_font, lambda: start_game("easy"))
-    draw_button(screen, "Normal", WIDTH // 2 - 150 // 2, HEIGHT // 2 - 150 // 2, 150, 150, GRAY, small_font, lambda: start_game("medium"))
-    draw_button(screen, "Hard", 2 * WIDTH // 3 - 150 // 2 + (100 // 2), HEIGHT // 2 - 150 // 2, 150, 150, GRAY, small_font, lambda: start_game("hard"))
-    draw_button(screen, "Back", WIDTH - 220, HEIGHT - 70, 200, 50, GRAY, small_font, lambda: set_state("menu"))
+    WIDTH, HEIGHT = 800, 600
+    background_img = pygame.image.load("boutons/LEVELMENU.png")  # Changez le nom selon votre fichier
+    background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
+    screen.blit(background_img, (0, 0))
 
+    draw_button(screen, "Easy", WIDTH // 3 - 150 // 2 - (100 // 2), HEIGHT // 2 - 70 // 2, 150, 50, GRAY, small_font, lambda: start_game("easy"))
+    load_img = pygame.image.load("boutons/EASY.png").convert_alpha()
+    load_img = pygame.transform.scale(load_img, (240, 100))
+    load_rect = load_img.get_rect(center=(WIDTH // 4.35, 290))
+    screen.blit(load_img, load_rect)
+
+    draw_button(screen, "Normal", WIDTH // 2 - 150 // 2, HEIGHT // 2 - 70 // 2, 150, 50, GRAY, small_font, lambda: start_game("medium"))
+    load_img = pygame.image.load("boutons/NORMAL.png").convert_alpha()
+    load_img = pygame.transform.scale(load_img, (190, 90))
+    load_rect = load_img.get_rect(center=(WIDTH // 2, 295))
+    screen.blit(load_img, load_rect)
+
+    draw_button(screen, "Hard", 2 * WIDTH // 3 - 130 // 2 + (100 // 2), HEIGHT // 2 - 60 // 2, 150, 50, GRAY, small_font, lambda: start_game("hard"))
+    load_img = pygame.image.load("boutons/HARD.png").convert_alpha()
+    load_img = pygame.transform.scale(load_img, (210, 92))
+    load_rect = load_img.get_rect(center=(WIDTH // 1.31599, 299))
+    screen.blit(load_img, load_rect)
+
+    draw_button(screen, "Back", WIDTH - 220, HEIGHT - 70, 170, 50, GRAY, small_font, lambda: set_state("menu"))
+    load_img = pygame.image.load("boutons/BACK.png").convert_alpha()
+    load_img = pygame.transform.scale(load_img, (210, 90))
+    load_rect = load_img.get_rect(center=(WIDTH // 1.199, 550))
+    screen.blit(load_img, load_rect)
 def game_screen():
     global camera_x, game_state, current_level_index
 
@@ -185,19 +232,16 @@ def game_screen():
     camera_x = ball.pos.x - CAMERA_OFFSET
 
     if not ball.is_alive or ball.pos.y >= HEIGHT - ball.radius:
-        if sounds_on:
-            sound_manager.play_sound('Sound/game_over_sound.wav')
+
         game_state = "game_over"
 
     if pygame.Rect(ball.pos.x - ball.radius, ball.pos.y - ball.radius, ball.radius * 2, ball.radius * 2).colliderect(finish_line):
-        if sounds_on:
-            sound_manager.play_sound('Sound/level_up_sound.wav')
+
         current_level_index += 1
         if current_level_index < 4:
             start_game_by_index(current_level_index)
         else:
-            if sounds_on:
-                sound_manager.play_sound('Sound/end_game_sound.wav')
+
             game_state = "win_level"
 
     for rope in ropes:
@@ -218,15 +262,31 @@ def game_screen():
     draw_button(screen, "Menu", WIDTH - 120, 20, 100, 40, GRAY, small_font, lambda: set_state("menu"))
 
 def game_over_screen():
-    screen.fill(BLACK)
-    render_text("Game Over", font, RED, WIDTH // 2, HEIGHT // 3, screen)
-    draw_button(screen, "Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, small_font, lambda: start_game("easy"))
-    draw_button(screen, "Menu", WIDTH // 2 - 100, HEIGHT // 2 + 170, 200, 50, GRAY, small_font, lambda: set_state("menu"))
+    WIDTH, HEIGHT = 800, 600
+    background_img = pygame.image.load("boutons/GAMEOVER.png")
+    background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
+    screen.blit(background_img, (0, 0))
 
+
+    draw_button(screen, "Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 150, 50, GRAY, small_font, lambda: start_game("easy"))
+    load_img = pygame.image.load("boutons/RESTART.png").convert_alpha()
+    load_img = pygame.transform.scale(load_img, (210, 90))
+    load_rect = load_img.get_rect(center=(WIDTH // 2.05, 420))
+    screen.blit(load_img, load_rect)
+
+    draw_button(screen, "Menu", WIDTH // 2 - 100, HEIGHT // 2 + 170, 150, 50, GRAY, small_font, lambda: set_state("menu"))
+    load_img = pygame.image.load("boutons/MENU.png").convert_alpha()
+    load_img = pygame.transform.scale(load_img, (210, 90))
+    load_rect = load_img.get_rect(center=(WIDTH // 2.05, 500))
+    screen.blit(load_img, load_rect)
 def win_level_screen():
-    screen.fill(BLACK)
-    render_text("Congratulations", font, BLUE, WIDTH // 2, HEIGHT // 3, screen)
+    WIDTH, HEIGHT = 800, 600
+    background_img = pygame.image.load("boutons/CONGRATS.png")
+    background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
+    screen.blit(background_img, (0, 0))
+
     draw_button(screen, "Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, small_font, lambda: start_game("easy"))
+
     draw_button(screen, "Menu", WIDTH // 2 - 100, HEIGHT // 2 + 170, 200, 50, GRAY, small_font, lambda: set_state("menu"))
 
 # Boucle principale
