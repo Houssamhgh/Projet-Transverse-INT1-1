@@ -1,31 +1,46 @@
 import pygame
 import random
+import math
+import sys
 
-# Pygame Initialization
+# Initialisation globale de pygame
 pygame.init()
+
+# Configuration de l'écran
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Spidey Hook")
 clock = pygame.time.Clock()
 
-# Game Configuration
-GRAVITY = 0.5
-MOVE_FORCE = 0.5  # Left/right movement force
-SPACE_BETWEEN_ROPES = 300  # Distance between ropes
-camera_x = 0  # Camera position
+# Couleurs
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+BLUE = (0, 0, 255)
+RED = (255, 0, 0)
 
+# Polices
+small_font = pygame.font.SysFont("Arial", 30)
+
+# Constantes du jeu
+MASS = 0.05
+GRAVITATIONAL_CONST = 9.81
+GRAVITY = MASS * GRAVITATIONAL_CONST
+SPACE_BETWEEN_ROPES = 300
+CAMERA_OFFSET = WIDTH // 3
+ON_GROUND = False
 
 class Rope:
     def __init__(self, x, y):
-        self.anchor = pygame.Vector2(x, y)  # Fixed point
-        self.length = None  # Dynamic length (set when attaching)
+        self.anchor = pygame.Vector2(x, y)
+        self.length = None
 
     def attach(self, ball):
-        """ Sets the rope length to the ball's current distance when attached. """
         self.length = (ball.pos - self.anchor).length()
+        ball.is_attached, ball.attached_rope = True, self
+        ball.initial_velocity = ball.velocity.length()
 
     def update(self, ball):
         if ball.is_attached and ball.attached_rope == self:
-            # Keep ball at fixed rope length
             direction = ball.pos - self.anchor
             distance = direction.length()
             if distance > self.length:
@@ -33,96 +48,133 @@ class Rope:
 
     def draw(self, screen, ball, camera_x):
         if ball.is_attached and ball.attached_rope == self:
-            pygame.draw.line(screen, (255, 255, 255),
+            pygame.draw.line(screen, WHITE,
                              (self.anchor.x - camera_x, self.anchor.y),
                              (ball.pos.x - camera_x, ball.pos.y), 3)
         pygame.draw.circle(screen, (0, 255, 0), (self.anchor.x - camera_x, self.anchor.y), 6)
-
 
 class Ball:
     def __init__(self, x, y, radius=10):
         self.pos = pygame.Vector2(x, y)
         self.radius = radius
-        self.attached_rope = None
+        self.velocity = pygame.Vector2(8, 5)
         self.is_attached = False
-        self.velocity = pygame.Vector2(0, 0)
+        self.attached_rope = None
+        self.state = ON_GROUND
+        self.mass = 1.0
 
-    def update(self, keys):
-        if self.is_attached and self.attached_rope:
-            # Swinging physics
-            if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-                self.velocity.x -= MOVE_FORCE
-            if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-                self.velocity.x += MOVE_FORCE
 
-            # Apply motion with slight gravity effect
-            self.velocity.y += GRAVITY * 0.3
-            self.pos += self.velocity
-            self.velocity *= 0.98  # Damping for realistic motion
+    def update(self, keys, platforms):
+        if keys[pygame.K_SPACE]:
+            if not self.is_attached:
+                closest_rope = min(ropes, key=lambda rope: abs(rope.anchor.x - self.pos.x))
+                closest_rope.attach(self)
         else:
-            # Gravity when detached
+            self.is_attached = False
+            self.attached_rope = None
+
+        if self.is_attached:
+            direction = self.pos - self.attached_rope.anchor
+            distance = direction.length()
+            if distance > 0:
+                direction.normalize_ip()
+                theta = math.atan2(direction.x, direction.y)
+                force_tangential = self.mass * GRAVITY * math.sin(theta)
+                tangent = pygame.Vector2(-direction.y, direction.x)
+                self.velocity += tangent * force_tangential
+                self.pos += self.velocity
+                current_distance = (self.pos - self.attached_rope.anchor).length()
+                if abs(current_distance - self.attached_rope.length) > 1:
+                    correction = direction * (self.attached_rope.length - current_distance)
+                    self.pos += correction
+                    self.velocity -= direction * direction.dot(self.velocity)
+        else:
             self.velocity.y += GRAVITY
             self.pos += self.velocity
 
-    def toggle_attachment(self, ropes):
-        if self.is_attached:
-            self.is_attached = False
-            self.attached_rope = None
-        else:
-            # Attach to the closest rope
-            closest_rope = min(ropes, key=lambda rope: abs(rope.anchor.x - self.pos.x))
-            closest_rope.attach(self)  # Set rope length dynamically
-            self.attached_rope = closest_rope
-            self.is_attached = True
-            self.velocity = pygame.Vector2(0, 0)  # Reset velocity for smooth swinging
+        if self.pos.y >= HEIGHT - self.radius:
+            self.pos.y = HEIGHT - self.radius
+            self.velocity.y = 0
+            self.state = ON_GROUND
+
+        for platform in platforms:
+            if platform.rect.colliderect(pygame.Rect(self.pos.x - self.radius, self.pos.y - self.radius,
+                                                   self.radius * 2, self.radius * 2)):
+                self.velocity.y = -self.velocity.y * 1.3
+                self.state = ON_GROUND
+                self.is_attached = False
 
     def draw(self, screen, camera_x):
-        pygame.draw.circle(screen, (0, 0, 255), (self.pos.x - camera_x, self.pos.y), self.radius)
+        pygame.draw.circle(screen, BLUE, (self.pos.x - camera_x, self.pos.y), self.radius)
 
+class Platform:
+    def __init__(self, x, y, width, height):
+        self.rect = pygame.Rect(x, y, width, height)
 
-# Create Objects
+    def draw(self, screen, camera_x):
+        pygame.draw.rect(screen, RED, self.rect.move(-camera_x, 0))
+
+def generate_rope_chain():
+    return [Rope(WIDTH // 2 + i * SPACE_BETWEEN_ROPES, HEIGHT // 4 + random.randint(-50, 50)) for i in range(2)]
+
+def generate_platforms():
+    return [
+        Platform(100, 400, 150, 10),
+        Platform(300, 400, 200, 20),
+        Platform(200, 400, 150, 20),
+        Platform(800, 500, 200, 10),
+        Platform(1000, 400, 150, 20),
+        Platform(3000, 400, 100, 20)
+    ]
+
+# Initialisation des objets du jeu
 ball = Ball(WIDTH // 2, HEIGHT // 2)
-ropes = [Rope(WIDTH // 2 + i * SPACE_BETWEEN_ROPES, HEIGHT // 4 + random.randint(-50, 50)) for i in range(5)]
+ropes = generate_rope_chain()
+platforms = generate_platforms()
+camera_x = 0
+score = 0
+score_increased = False
 
+# Boucle principale du jeu
 running = True
 while running:
-    screen.fill((0, 0, 0))
-
-    keys = pygame.key.get_pressed()  # Get keys for movement
-
-    # Event Handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                ball.toggle_attachment(ropes)
 
-    # Update Ball
-    ball.update(keys)
 
-    # Move the camera smoothly to follow the ball
-    camera_x = max(camera_x, ball.pos.x - WIDTH // 3)
+    keys = pygame.key.get_pressed()
+    ball.update(keys, platforms)
+    camera_x = ball.pos.x - CAMERA_OFFSET
 
-    # Update Ropes
     for rope in ropes:
         rope.update(ball)
 
-    # Generate new ropes dynamically
     if ropes[-1].anchor.x - camera_x < WIDTH:
-        new_rope_x = ropes[-1].anchor.x + SPACE_BETWEEN_ROPES
-        new_rope_y = HEIGHT // 4 + random.randint(-50, 50)
-        ropes.append(Rope(new_rope_x, new_rope_y))
+        ropes.append(Rope(ropes[-1].anchor.x + SPACE_BETWEEN_ROPES, HEIGHT // 4 + random.randint(-50, 50)))
 
-    # Remove ropes that move out of view
-    ropes = [rope for rope in ropes if rope.anchor.x - camera_x > -150]
+    if ball.is_attached and ball.attached_rope and not score_increased:
+        score += 1
+        score_increased = True
 
-    # Draw everything
+    if not ball.is_attached:
+        score_increased = False
+
+    if ball.pos.y >= HEIGHT - ball.radius:
+        running = False
+    screen.fill(BLACK)
     for rope in ropes:
         rope.draw(screen, ball, camera_x)
     ball.draw(screen, camera_x)
+    for platform in platforms:
+        platform.draw(screen, camera_x)
+
+    score_text = small_font.render(f'Score: {score}', True, WHITE)
+    screen.blit(score_text, (10, 10))
 
     pygame.display.flip()
     clock.tick(60)
 
 pygame.quit()
+sys.exit()
+
