@@ -105,7 +105,7 @@ class Ball(pygame.sprite.Sprite):
     def draw(self, screen, camera_x):
         self.image = pygame.image.load("boutons/spider.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (self.radius * 3.7, self.radius * 3.7))
-        screen.blit(self.image, (self.pos.x - camera_x - self.radius, self.pos.y - self.radius))
+        screen.blit(self.image, (self.pos.x - camera_x - self.radius-10, self.pos.y - self.radius))
 
 class Platform(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, bouncy=False):
