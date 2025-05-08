@@ -2,11 +2,12 @@ import pygame
 import random
 import math
 from settings import *
-#Fonctions utilitaires et classes
+#this file contains all the classes and other functions used in the game
 
 
 
 class SoundManager:
+    #class to manage sounds and music
     def __init__(self):
 
         pygame.mixer.init()
@@ -27,37 +28,46 @@ class SoundManager:
         }
 
     def play_sound(self, name):
+        #function used to play a sound
         if name in self.sounds:
             self.sounds[name].play()
 
     def play_music(self, track_name, loop=True):
+        #function used to play a music track
         if track_name in self.music_tracks:
             pygame.mixer.music.load(self.music_tracks[track_name])
-            pygame.mixer.music.set_volume(0.5)  # volume entre 0.0 et 1.0
+            pygame.mixer.music.set_volume(0.5)  #volume of the music
             pygame.mixer.music.play(-1 if loop else 0)
 
     def stop_music(self):
+        #function used to stop the music
         pygame.mixer.music.stop()
 
     def pause_music(self):
+        #function used to pause the music
         pygame.mixer.music.pause()
 
     def resume_music(self):
+        #function used to resume the music
         pygame.mixer.music.unpause()
 
 class Rope(pygame.sprite.Sprite):
+    #class of the ropes
     def __init__(self, x, y):
+        #initialization of the rope
         super().__init__()
         self.anchor = pygame.Vector2(x, y)
         self.length = None
-        self.image = pygame.image.load("boutons/torch1.png").convert_alpha()  # Load your image
+        self.image = pygame.image.load("boutons/torch1.png").convert_alpha()  #loads rope image ( here a torch)
         self.image = pygame.transform.scale(self.image, (45, 75) )
     def attach(self, ball):
+        #function used to attach the rope to the ball
         self.length = (ball.pos - self.anchor).length()
         ball.is_attached, ball.attached_rope = True, self
         ball.initial_velocity = ball.velocity.length()
 
     def update(self, ball):
+        #function used to update the rope's length
         if ball.is_attached and ball.attached_rope == self:
             keys = pygame.key.get_pressed()
             if keys[pygame.K_SPACE]:
@@ -68,17 +78,20 @@ class Rope(pygame.sprite.Sprite):
                 ball.pos = self.anchor + direction.normalize() * self.length
 
     def draw(self, screen, ball, camera_x):
+        #function used to draw the rope ( a simple white line using pygame.draw.line)
         if ball.is_attached and ball.attached_rope == self:
             pygame.draw.line(screen, WHITE,
                              (self.anchor.x - camera_x, self.anchor.y),
                              (ball.pos.x - camera_x, ball.pos.y), 3)
         if ball.pos.x < 4100:
-            # Instead of the circle, we blit the image
+            #display of the image
             rect = self.image.get_rect(center=(self.anchor.x - camera_x, self.anchor.y))
             screen.blit(self.image, rect)
 
 class Ball(pygame.sprite.Sprite):
+    #class of the ball (here a spider) 
     def __init__(self, x, y, radius=10):
+        #initialization of the ball
         super().__init__()
         self.pos = pygame.Vector2(x, y)
         self.radius = radius
@@ -90,44 +103,55 @@ class Ball(pygame.sprite.Sprite):
         self.is_alive = True
 
     def update(self, keys, platforms, slopes, ropes):
+        #function used to update the ball's position and velocity
         if not self.is_alive:
+            #if user lost, no ball
             return
         if keys[pygame.K_SPACE] and not self.is_attached:
+            #check if user tries to attach the ball to a rope and does it
             closest_rope = min(ropes, key=lambda rope: abs(rope.anchor.x - self.pos.x))
             closest_rope.attach(self)
         elif not keys[pygame.K_SPACE]:
+            #if user is not pressing space, the ball is not attached to any rope
             self.is_attached = False
             self.attached_rope = None
 
         if self.pos.y - self.radius < 0:
+            #if the ball collides with the ceiling, it stops her
             self.pos.y = self.radius
             self.velocity.y = 0
 
         if self.is_attached:
+            #maintains the ball at the distance of the rope from the slope
             direction = self.pos - self.attached_rope.anchor
             distance = direction.length()
             if distance > 0:
+                #yhe ball is attached to the rope
                 direction.normalize_ip()
                 theta = math.atan2(direction.x, direction.y)
                 force_tangential = self.mass * GRAVITY * math.sin(theta)
                 tangent = pygame.Vector2(-direction.y, direction.x)
                 self.velocity += tangent * force_tangential
-                self.pos += self.velocity
+                self.pos += self.velocity #update velocity of the ball
                 current_distance = (self.pos - self.attached_rope.anchor).length()
                 if abs(current_distance - self.attached_rope.length) > 1:
+                    #if the ball is too far from the rope, it is corrected
                     correction = direction * (self.attached_rope.length - current_distance)
                     self.pos += correction
                     self.velocity -= direction * direction.dot(self.velocity)
         else:
+            #if not attached, ball is submitted to gravity, simulating free fall
             self.velocity.y += GRAVITY
             self.pos += self.velocity
 
         if self.pos.y >= HEIGHT - self.radius:
+            #if the ball collides with the ground, it stops her and the level is over
             self.pos.y = HEIGHT - self.radius
             self.velocity.y = 0
             self.state = ON_GROUND
 
         for platform in platforms:
+            #checks for a colliion between a platform and the ball
             if platform.rect.colliderect(pygame.Rect(self.pos.x - self.radius, self.pos.y - self.radius,
                                                      self.radius * 2, self.radius * 2)):
                 if platform.bouncy:
@@ -145,25 +169,31 @@ class Ball(pygame.sprite.Sprite):
             slope.check_collision_and_bounce(self)
 
     def draw(self, screen, camera_x):
+        #function used to draw the ball (here a spider)
         self.image = pygame.image.load("boutons/spider.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (self.radius * 3.7, self.radius * 3.7))
         screen.blit(self.image, (self.pos.x - camera_x - self.radius-10, self.pos.y - self.radius))
 
 class Platform(pygame.sprite.Sprite):
+    #class for the patforms
     def __init__(self, x, y, width, height, bouncy=False):
+        #gives the platform its position and size
         super().__init__()
         self.rect = pygame.Rect(x, y, width, height)
         self.bouncy = bouncy
 
-        # Choose texture based on bouncy state
-        texture_path = "boutons/wood.png" if self.bouncy else "boutons/spikes.png"
-        self.image = pygame.image.load(texture_path).convert_alpha()
+        #loads image for platform
+        self.image = pygame.image.load("boutons/wood.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (width, height))
 
     def draw(self, screen, camera_x):
+        #draws the platforms at their position
         screen.blit(self.image, (self.rect.x - camera_x, self.rect.y))
+
+
 class SlopedPlatform(pygame.sprite.Sprite):
     def __init__(self, x1, y1, x2, y2, bouncy=True):
+        #gives the slope its position and size
         super().__init__()
         self.start = pygame.Vector2(x1, y1)
         self.end = pygame.Vector2(x2, y2)
@@ -171,16 +201,17 @@ class SlopedPlatform(pygame.sprite.Sprite):
         self.thickness = 10
         self.color = GREEN if bouncy else RED
 
-        # Calculate slope properties
+        #give the slope some properties
         self.length = int((self.end - self.start).length())
         self.angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
 
-        # Load and scale the image to the slope's length and thickness
+        #load ans displays image to the slope length and thickness
         self.base_image = pygame.image.load("boutons/wood.png").convert_alpha()
         self.base_image = pygame.transform.scale(self.base_image, (self.length, self.thickness))
         self.image = pygame.transform.rotate(self.base_image, -self.angle)
 
     def draw(self, screen, camera_x):
+        #draws the slope at its position
         start = self.start - pygame.Vector2(camera_x, 0)
         end = self.end - pygame.Vector2(camera_x, 0)
         midpoint = (start + end) / 2
@@ -189,6 +220,7 @@ class SlopedPlatform(pygame.sprite.Sprite):
         screen.blit(self.image, rotated_rect.topleft)
 
     def check_collision_and_bounce(self, ball):
+        #complex function that makes the ball bounce of inclined platforms
         line_vec = self.end - self.start
         line_unit = line_vec.normalize()
         normal = pygame.Vector2(-line_unit.y, line_unit.x)
@@ -205,14 +237,17 @@ class SlopedPlatform(pygame.sprite.Sprite):
             correction = delta.normalize() * penetration if distance != 0 else normal * penetration
             ball.pos += correction
             if self.bouncy:
+                #if it's a bouncy slope, the ball bounces
                 ball.velocity = ball.velocity.reflect(normal) * 1.2
             else:
+                #otherwise, it dies
                 ball.is_alive = False
                 ball.kill()
             return True
         return False
 
 def generate_rope_chain(index):
+    #this contains arrays of ropes that are used for each level
     return [[Rope(1000, 150), Rope(1300, 100), Rope(2300, 100), Rope(3000, 100), Rope(3500, 80), Rope(5000, 100)],
             [Rope(600, 50), Rope(1000, 150), Rope(1300, 200), Rope(2000, 100), Rope(2700, 70), Rope(3200, 100), Rope(3700, 80), Rope(4000, 50), Rope(5000, 100)],
             [Rope(600, 50), Rope(950, 200), Rope(1300, 100), Rope(2075, 225), Rope(2075, 570), Rope(2575, 75), Rope(2575, 475), Rope(3000, 100), Rope(3700, 80), Rope(5000, 100)],
@@ -220,6 +255,7 @@ def generate_rope_chain(index):
             ][index]
 
 def generate_platforms(index):
+    #this contains arrays of platforms that are used for each level
     levels = [
         [Platform(400, 400, 150, 10, True),
          Platform(1000, 400, 150, 20, False),
@@ -249,7 +285,9 @@ def generate_platforms(index):
          Platform(2000, 500, 150, 20, True)]
     ]
     return levels[index]
+
 def generate_slopes(index):
+    #this contains arrays of slopes that are used for each level
     return [
         [],
 
@@ -281,4 +319,3 @@ def generate_slopes(index):
         SlopedPlatform(5000,400, 4000, 300 ),
         ]
     ][index]
-
