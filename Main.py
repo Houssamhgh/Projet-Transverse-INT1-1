@@ -230,7 +230,14 @@ def aiming_screen():
     draw_trajectory(ball.pos, direction, camera_x=camera_x, steps=100, dt=0.1)
 
     ball.draw(screen, camera_x)
-    draw_platforms(camera_x)
+    for rope in ropes:
+        rope.draw(screen, ball, camera_x)
+    ball.draw(screen, camera_x)
+    for platform in platforms:
+        platform.draw(screen, camera_x)
+    for slope in slopes:
+        slope.draw(screen, camera_x)
+
 
     # Mise à jour de la caméra
     camera_x = ball.pos.x - CAMERA_OFFSET
