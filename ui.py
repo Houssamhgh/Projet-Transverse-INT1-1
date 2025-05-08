@@ -29,26 +29,24 @@ def draw_button(screen, text, x, y, width, height, color, font, action=None):
 import math
 from settings import *
 
-def draw_trajectory(ball_pos, velocity, camera_x=0, steps=100, dt=0.1):
-    pos = pygame.Vector2(ball_pos)
+def draw_trajectory(start_pos, velocity, camera_x=0, steps=100, dt=0.1):
+    pos = pygame.Vector2(start_pos)
     vel = pygame.Vector2(velocity)
     points = []
 
-    # Calcul de la trajectoire avec un nombre d'étapes et un delta time
-    for _ in range(steps):
-        vel.y += GRAVITY * dt  # Mise à jour de la vitesse en fonction de la gravité
-        pos += vel * dt  # Mise à jour de la position avec la vitesse
+    for step in range(steps):
+        t = step * dt
+        x = pos.x + vel.x * t
+        y = pos.y + vel.y * t + 0.5 * GRAVITY * (t ** 2)
 
-        points.append((int(pos.x - camera_x), int(pos.y)))
-
-        # Arrêter la trajectoire si elle touche le sol (par exemple)
-        if pos.y >= HEIGHT - 10:  # Si la balle touche le sol
+        screen_x = int(x - camera_x)
+        screen_y = int(y)
+        if screen_y > HEIGHT:  # Ne pas dessiner en dehors de l'écran
             break
+        points.append((screen_x, screen_y))
 
-    # Dessiner la trajectoire
     for point in points:
-        pygame.draw.circle(pygame.display.get_surface(), WHITE, point, 2)
-
+        pygame.draw.circle(pygame.display.get_surface(), (255, 255,0),point,2)
 
 def draw_direction_arrow(screen, start_pos, velocity, camera_x=0):
     end_pos = start_pos + velocity * 10  # Multiplier pour allonger la flèche

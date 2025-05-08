@@ -4,7 +4,7 @@ import random
 import math
 import pygame
 from settings import *
-from utils import  Ball, generate_rope_chain, generate_platforms, generate_slopes, Rope
+from utils import  Ball, generate_rope_chain, generate_platforms, generate_slopes, Rope, SoundManager
 from ui import render_text, draw_button, draw_trajectory, draw_direction_arrow
 
 # Initialisation pygame
@@ -12,17 +12,20 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Spidey Hook")
 clock = pygame.time.Clock()
+sound_manager = SoundManager()
 
 
 # Etat global
 game_state = "menu"
 music_on = True
 sounds_on = True
-selected_music = "Track 1"
+selected_music = "track1"
 input_text = ""
 click_released = True
 is_aiming = True
 gravity = 0.5
+current_music_playing = None
+
 
 # Trajectoire initiale
 initial_velocity = pygame.Vector2(8, -5)
@@ -47,18 +50,44 @@ def set_state(state):
 
 
 def toggle_music():
-    global music_on
+    global music_on, current_music_playing
     music_on = not music_on
+    if not music_on:
+        sound_manager.stop_music()
+        current_music_playing = None
+    else:
+        if selected_music:
+            current_music_playing = selected_music
+            sound_manager.play_music(current_music_playing)
 
 
 def toggle_sounds():
     global sounds_on
     sounds_on = not sounds_on
 
-def change_music():
-    global selected_music
-    selected_music = random.choice(["Track 1", "Track 2", "Track 3"])
-    print(f"Musique changée: {selected_music}")
+
+
+def change_music_screen():
+    global selected_music, current_music_playing
+
+    WIDTH, HEIGHT = 800, 600
+    screen.fill(BLACK)
+
+
+    def set_music(track_name):
+        global selected_music, current_music_playing
+        selected_music = track_name
+        current_music_playing = track_name
+        if music_on:
+            sound_manager.play_music(track_name)
+        set_state("settings")
+
+    draw_button(screen, "Track 1", WIDTH // 2 - 75, 150, 150, 50, GRAY, small_font, lambda: set_music("track1"))
+    draw_button(screen, "Track 2", WIDTH // 2 - 75, 230, 150, 50, GRAY, small_font, lambda: set_music("track2"))
+    draw_button(screen, "Track 3", WIDTH // 2 - 75, 310, 150, 50, GRAY, small_font, lambda: set_music("track3"))
+
+    draw_button(screen, "Back", WIDTH // 2 - 75, 400, 150, 50, GRAY, small_font, lambda: set_state("settings"))
+
 
 def start_game(difficulty='easy'):
     global current_level_index
@@ -78,15 +107,27 @@ def start_game_by_index(index):
     camera_x = 0
     initial_velocity = pygame.Vector2(0, 0)
 
+
     # Début avec une vitesse nulle
     game_state = "aiming"  # Lancement directement dans l'écran d'aiming
 
 def menu_screen():
-
+    global current_music_playing, selected_music
     WIDTH, HEIGHT = 800, 600
     background_img = pygame.image.load("boutons/MENU_NEW.png")  # Changez le nom selon votre fichier
     background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
     screen.blit(background_img, (0, 0))
+
+    if selected_music is None:
+        selected_music = "track1"
+        if music_on:
+            sound_manager.play_music(selected_music)
+            current_music_playing = selected_music
+
+    if music_on and current_music_playing != selected_music:
+        sound_manager.play_music(selected_music)
+        current_music_playing = selected_music
+
 
     draw_button(screen, "Start Game", WIDTH // 2 - 100, 230, 190, 50, GRAY, small_font, lambda: start_game("easy"))
     start_img = pygame.image.load("boutons/START.png").convert_alpha()
@@ -105,6 +146,8 @@ def menu_screen():
     load_img = pygame.transform.scale(load_img, (240, 100))
     load_rect = load_img.get_rect(center=(WIDTH // 6.3, 550))
     screen.blit(load_img, load_rect)
+
+    draw_button(screen, "Rules and Credits", WIDTH-220, HEIGHT - 70, 200, 50, GRAY, small_font, lambda: set_state("rules"))
 
 
 camera_x = 0  # Global
@@ -166,6 +209,11 @@ def aiming_screen():
     # Mise à jour de la caméra
     camera_x = ball.pos.x - CAMERA_OFFSET
 
+def rules_screen():
+    WIDTH, HEIGHT = 800, 600
+    screen.fill(BLACK)
+
+    draw_button(screen, "Back", WIDTH - 220, HEIGHT - 70, 170, 50, GRAY, small_font, lambda: set_state("menu"))
 
 def settings_screen():
     WIDTH, HEIGHT = 800, 600
@@ -186,7 +234,7 @@ def settings_screen():
     load_rect = load_img.get_rect(center=(WIDTH // 2, 333))
     screen.blit(load_img, load_rect)
 
-    draw_button(screen, "Change Music", 350, 400, 120, 40, GRAY, small_font, change_music)
+    draw_button(screen, "Change Music", 350, 400, 120, 40, GRAY, small_font, lambda: set_state("change_music"))
     load_img = pygame.image.load("boutons/CHANGE MUSIC.png").convert_alpha()
     load_img = pygame.transform.scale(load_img, (220, 80))
     load_rect = load_img.get_rect(center=(WIDTH // 2, 430))
@@ -233,11 +281,21 @@ def game_screen():
     ball.update(keys, platforms, slopes, ropes)
     camera_x = ball.pos.x - CAMERA_OFFSET
 
-    if not ball.is_alive or ball.pos.y >= HEIGHT - ball.radius:
+    if sounds_on:
+        sound_manager.play_sound('starting_sound')
 
+    if not ball.is_alive or ball.pos.y >= HEIGHT - ball.radius:
+        if sounds_on:
+            sound_manager.play_sound('gameover_sound')
         game_state = "game_over"
 
     if pygame.Rect(ball.pos.x - ball.radius, ball.pos.y - ball.radius, ball.radius * 2, ball.radius * 2).colliderect(finish_line):
+        if sounds_on:
+            if current_level_index == 2:
+                sound_manager.play_sound('win_sound')
+            else:
+                sound_manager.play_sound('levelup_sound')
+
         current_level_index += 1
         game_state = "win_level"
 
@@ -261,7 +319,7 @@ def game_screen():
         slope.draw(screen, camera_x)
 
     pygame.draw.rect(screen, GREEN, pygame.Rect(finish_line.x - camera_x, finish_line.y, finish_line.width, finish_line.height))
-    draw_button(screen, "Menu", WIDTH - 120, 20, 100, 40, GRAY, small_font, lambda: set_state("menu"))
+
 
 def game_over_screen():
     WIDTH, HEIGHT = 800, 600
@@ -288,10 +346,9 @@ def win_level_screen():
     screen.blit(background_img, (0, 0))
 
     draw_button(screen, "Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, small_font, lambda: start_game_by_index(current_level_index))
-    load_img = pygame.image.load("boutons/HARD.png").convert_alpha()
-    load_img = pygame.transform.scale(load_img, (210, 92))
-    load_rect = load_img.get_rect(center=(WIDTH // 1.31599, 299))
-    screen.blit(load_img, load_rect)
+
+
+
 
     draw_button(screen, "Menu", WIDTH // 2 - 100, HEIGHT // 2 + 170, 200, 50, GRAY, small_font, lambda: set_state("menu"))
     load_img = pygame.image.load("boutons/MENU.png").convert_alpha()
@@ -316,8 +373,12 @@ while running:
     # Gestion des différentes scènes du jeu
     if game_state == "menu":
         menu_screen()
+    elif game_state == "rules":
+        rules_screen()
     elif game_state == "settings":
         settings_screen()
+    elif game_state == "change_music":
+        change_music_screen()
     elif game_state == "load_game":
         load_game_screen()
     elif game_state == "aiming":

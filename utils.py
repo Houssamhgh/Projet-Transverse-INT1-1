@@ -3,6 +3,48 @@ import random
 import math
 from settings import *
 #Fonctions utilitaires et classes
+
+
+
+class SoundManager:
+    def __init__(self):
+
+        pygame.mixer.init()
+
+        self.sounds = {
+            'starting_sound': pygame.mixer.Sound('Sound/start_game_sound.wav'),
+            'gameover_sound': pygame.mixer.Sound('Sound/game_over_sound.wav'),
+            'hanging_sound': pygame.mixer.Sound('Sound/rope_sound.wav'),
+            'levelup_sound': pygame.mixer.Sound('Sound/level_up_sound.wav'),
+            'win_sound': pygame.mixer.Sound('Sound/end_game_sound.wav'),
+        }
+
+
+        self.music_tracks = {
+            'track1': 'Music/epic_track.wav',
+            'track2': 'Music/haunted_track.wav',
+            'track3': 'Music/spooky_track.wav',
+        }
+
+    def play_sound(self, name):
+        if name in self.sounds:
+            self.sounds[name].play()
+
+    def play_music(self, track_name, loop=True):
+        if track_name in self.music_tracks:
+            pygame.mixer.music.load(self.music_tracks[track_name])
+            pygame.mixer.music.set_volume(0.5)  # volume entre 0.0 et 1.0
+            pygame.mixer.music.play(-1 if loop else 0)
+
+    def stop_music(self):
+        pygame.mixer.music.stop()
+
+    def pause_music(self):
+        pygame.mixer.music.pause()
+
+    def resume_music(self):
+        pygame.mixer.music.unpause()
+
 class Rope(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
@@ -126,7 +168,7 @@ class SlopedPlatform(pygame.sprite.Sprite):
         self.start = pygame.Vector2(x1, y1)
         self.end = pygame.Vector2(x2, y2)
         self.bouncy = bouncy
-        self.thickness = 8
+        self.thickness = 10
         self.color = GREEN if bouncy else RED
 
         # Calculate slope properties
