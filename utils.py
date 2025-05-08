@@ -140,7 +140,10 @@ class SlopedPlatform(pygame.sprite.Sprite):
     def draw(self, screen, camera_x):
         start = self.start - pygame.Vector2(camera_x, 0)
         end = self.end - pygame.Vector2(camera_x, 0)
-        pygame.draw.line(screen, self.color, start, end, self.thickness)
+        midpoint = (start + end) / 2
+
+        rotated_rect = self.image.get_rect(center=midpoint)
+        screen.blit(self.image, rotated_rect.topleft)
 
     def check_collision_and_bounce(self, ball):
         line_vec = self.end - self.start
