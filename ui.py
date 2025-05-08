@@ -38,7 +38,7 @@ def draw_trajectory(start_pos, velocity, camera_x=0, steps=100, dt=0.1):
         t = step * dt
         x = pos.x + vel.x * t
         y = pos.y + vel.y * t + 0.5 * GRAVITY * (t ** 2)
-
+#
         screen_x = int(x - camera_x)
         screen_y = int(y)
         if screen_y > HEIGHT:  # Ne pas dessiner en dehors de l'écran

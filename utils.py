@@ -56,7 +56,7 @@ class Rope(pygame.sprite.Sprite):
         self.length = (ball.pos - self.anchor).length()
         ball.is_attached, ball.attached_rope = True, self
         ball.initial_velocity = ball.velocity.length()
-
+#
     def update(self, ball):
         if ball.is_attached and ball.attached_rope == self:
             keys = pygame.key.get_pressed()

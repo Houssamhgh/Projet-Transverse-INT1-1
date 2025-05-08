@@ -6,7 +6,7 @@ import pygame
 from settings import *
 from utils import  Ball, generate_rope_chain, generate_platforms, generate_slopes, Rope, SoundManager
 from ui import render_text, draw_button, draw_trajectory, draw_direction_arrow
-
+#
 # Initialisation pygame
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
