@@ -126,7 +126,7 @@ def aiming_screen():
     global initial_velocity, game_state, ball, camera_x  # Ajout de camera_x ici
 
     WIDTH, HEIGHT = 800, 600
-    background_img = pygame.image.load("boutons/BACKGB.png")  # Changez le nom selon votre fichier
+    background_img = pygame.image.load("boutons/BACKGB.jpeg")  # Changez le nom selon votre fichier
     background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
     screen.blit(background_img, (0, 0))
 
@@ -249,7 +249,13 @@ def game_screen():
     if ropes[-1].anchor.x - camera_x < WIDTH:
         ropes.append(Rope(ropes[-1].anchor.x + SPACE_BETWEEN_ROPES, HEIGHT // 4 + random.randint(-50, 50)))
 
-    screen.fill(BLACK)
+    background = pygame.image.load("boutons/BACKGB.jpeg")
+    background = pygame.transform.scale(background, (WIDTH, HEIGHT))
+    screen.blit(background, (0, 0))
+    bg_x = -camera_x % background.get_width()
+    screen.blit(background, (bg_x - background.get_width(), 0))
+    screen.blit(background, (bg_x, 0))
+
     for rope in ropes:
         rope.draw(screen, ball, camera_x)
     ball.draw(screen, camera_x)

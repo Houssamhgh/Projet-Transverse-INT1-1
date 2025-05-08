@@ -8,7 +8,7 @@ class Rope(pygame.sprite.Sprite):
         super().__init__()
         self.anchor = pygame.Vector2(x, y)
         self.length = None
-        self.image = pygame.image.load("boutons/torch.png").convert_alpha()  # Load your image
+        self.image = pygame.image.load("boutons/torch1.png").convert_alpha()  # Load your image
         self.image = pygame.transform.scale(self.image, (45, 75) )
     def attach(self, ball):
         self.length = (ball.pos - self.anchor).length()
