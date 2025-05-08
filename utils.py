@@ -3,31 +3,13 @@ import random
 import math
 from settings import *
 #Fonctions utilitaires et classes
-class Spider:
-    def __init__(self):
-        self.x = random.randint(0, WIDTH)
-        self.y = random.randint(0, HEIGHT)
-        self.speed_x = random.choice([-1, 1]) * random.randint(1, 3)
-        self.speed_y = random.choice([-1, 1]) * random.randint(1, 3)
-
-    def move(self):
-        self.x += self.speed_x
-        self.y += self.speed_y
-
-        if self.x < 0 or self.x > WIDTH:
-            self.speed_x = -self.speed_x
-        if self.y < 0 or self.y > HEIGHT:
-            self.speed_y = -self.speed_y
-
-    def draw(self, screen):
-        pygame.draw.circle(screen, WHITE, (self.x, self.y), 10)
-
 class Rope(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         self.anchor = pygame.Vector2(x, y)
         self.length = None
-
+        self.image = pygame.image.load("boutons/torch1.png").convert_alpha()  # Load your image
+        self.image = pygame.transform.scale(self.image, (45, 75) )
     def attach(self, ball):
         self.length = (ball.pos - self.anchor).length()
         ball.is_attached, ball.attached_rope = True, self
@@ -49,7 +31,9 @@ class Rope(pygame.sprite.Sprite):
                              (self.anchor.x - camera_x, self.anchor.y),
                              (ball.pos.x - camera_x, ball.pos.y), 3)
         if ball.pos.x < 4100:
-            pygame.draw.circle(screen, GREEN, (self.anchor.x - camera_x, self.anchor.y), 6)
+            # Instead of the circle, we blit the image
+            rect = self.image.get_rect(center=(self.anchor.x - camera_x, self.anchor.y))
+            screen.blit(self.image, rect)
 
 class Ball(pygame.sprite.Sprite):
     def __init__(self, x, y, radius=10):
@@ -119,7 +103,9 @@ class Ball(pygame.sprite.Sprite):
             slope.check_collision_and_bounce(self)
 
     def draw(self, screen, camera_x):
-        pygame.draw.circle(screen, BLUE, (self.pos.x - camera_x, self.pos.y), self.radius)
+        self.image = pygame.image.load("boutons/spider.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (self.radius * 3.7, self.radius * 3.7))
+        screen.blit(self.image, (self.pos.x - camera_x - self.radius-10, self.pos.y - self.radius))
 
 class Platform(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, bouncy=False):
@@ -127,10 +113,12 @@ class Platform(pygame.sprite.Sprite):
         self.rect = pygame.Rect(x, y, width, height)
         self.bouncy = bouncy
 
-    def draw(self, screen, camera_x):
-        color = GREEN if self.bouncy else RED
-        pygame.draw.rect(screen, color, self.rect.move(-camera_x, 0))
+        # Load and scale the image
+        self.image = pygame.image.load("boutons/wood.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (width, height))
 
+    def draw(self, screen, camera_x):
+        screen.blit(self.image, (self.rect.x - camera_x, self.rect.y))
 class SlopedPlatform(pygame.sprite.Sprite):
     def __init__(self, x1, y1, x2, y2, bouncy=True):
         super().__init__()
@@ -140,10 +128,22 @@ class SlopedPlatform(pygame.sprite.Sprite):
         self.thickness = 8
         self.color = GREEN if bouncy else RED
 
+        # Calculate slope properties
+        self.length = int((self.end - self.start).length())
+        self.angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
+
+        # Load and scale the image to the slope's length and thickness
+        self.base_image = pygame.image.load("boutons/wood.png").convert_alpha()
+        self.base_image = pygame.transform.scale(self.base_image, (self.length, self.thickness))
+        self.image = pygame.transform.rotate(self.base_image, -self.angle)
+
     def draw(self, screen, camera_x):
         start = self.start - pygame.Vector2(camera_x, 0)
         end = self.end - pygame.Vector2(camera_x, 0)
-        pygame.draw.line(screen, self.color, start, end, self.thickness)
+        midpoint = (start + end) / 2
+
+        rotated_rect = self.image.get_rect(center=midpoint)
+        screen.blit(self.image, rotated_rect.topleft)
 
     def check_collision_and_bounce(self, ball):
         line_vec = self.end - self.start
@@ -239,41 +239,3 @@ def generate_slopes(index):
         ]
     ][index]
 
-class SoundManager:
-    def __init__(self):
-
-        pygame.mixer.init()
-
-        self.sounds = {
-            'starting_sound': pygame.mixer.Sound('Sound/start_game_sound.wav'),
-            'gameover_sound': pygame.mixer.Sound('Sound/game_over_sound.wav'),
-            'hanging_sound': pygame.mixer.Sound('Sound/rope_sound.wav'),
-            'levelup_sound': pygame.mixer.Sound('Sound/level_up_sound.wav'),
-            'win_sound': pygame.mixer.Sound('Sound/end_game_sound.wav'),
-        }
-
-
-        self.music_tracks = {
-            'track1': 'Music/track1.wav',
-            'track2': 'Music/track2.wav',
-            'track3': 'Music/track3.wav',
-        }
-
-    def play_sound(self, name):
-        if name in self.sounds:
-            self.sounds[name].play()
-
-    def play_music(self, track_name, loop=True):
-        if track_name in self.music_tracks:
-            pygame.mixer.music.load(self.music_tracks[track_name])
-            pygame.mixer.music.set_volume(0.5)  # volume entre 0.0 et 1.0
-            pygame.mixer.music.play(-1 if loop else 0)
-
-    def stop_music(self):
-        pygame.mixer.music.stop()
-
-    def pause_music(self):
-        pygame.mixer.music.pause()
-
-    def resume_music(self):
-        pygame.mixer.music.unpause()
