@@ -27,27 +27,6 @@ def render_text(text, font, color, x, y):
     screen.blit(text_surface, text_rect)
 
 
-class Spider:
-    def __init__(self):
-        self.x = random.randint(0, screen_width)
-        self.y = random.randint(0, screen_height)
-        self.speed_x = random.choice([-1, 1]) * random.randint(1, 3)
-        self.speed_y = random.choice([-1, 1]) * random.randint(1, 3)
-
-    def move(self):
-        self.x += self.speed_x
-        self.y += self.speed_y
-
-        if self.x < 0 or self.x > screen_width:
-            self.speed_x = -self.speed_x
-        if self.y < 0 or self.y > screen_height:
-            self.speed_y = -self.speed_y
-
-    def draw(self):
-        pygame.draw.circle(screen, WHITE, (self.x, self.y), 10)
-
-
-spiders = [Spider() for _ in range(5)]
 
 def draw_spider_web():
     center_x, center_y = screen_width // 2, screen_height // 2
@@ -136,7 +115,7 @@ def change_music(track):
 
 def menu():
     screen.fill(background_color)
-    draw_spider_web()
+
 
     # Centrer le titre "Spidey Hook"
     title_text = "Spidey Hook"
@@ -150,7 +129,7 @@ def menu():
     draw_button("Settings", 20, screen_height-70, 200, 50, GRAY, settings)
 
     # Faire bouger les araignées
-    for spider in spiders:
+ for spider in spiders:
         spider.move()
         spider.draw()
 
