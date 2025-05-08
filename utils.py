@@ -3,13 +3,55 @@ import random
 import math
 from settings import *
 #Fonctions utilitaires et classes
+
+
+
+class SoundManager:
+    def __init__(self):
+
+        pygame.mixer.init()
+
+        self.sounds = {
+            'starting_sound': pygame.mixer.Sound('Sound/start_game_sound.wav'),
+            'gameover_sound': pygame.mixer.Sound('Sound/game_over_sound.wav'),
+            'hanging_sound': pygame.mixer.Sound('Sound/rope_sound.wav'),
+            'levelup_sound': pygame.mixer.Sound('Sound/level_up_sound.wav'),
+            'win_sound': pygame.mixer.Sound('Sound/end_game_sound.wav'),
+        }
+
+
+        self.music_tracks = {
+            'track1': 'Music/epic_track.wav',
+            'track2': 'Music/haunted_track.wav',
+            'track3': 'Music/spooky_track.wav',
+        }
+
+    def play_sound(self, name):
+        if name in self.sounds:
+            self.sounds[name].play()
+
+    def play_music(self, track_name, loop=True):
+        if track_name in self.music_tracks:
+            pygame.mixer.music.load(self.music_tracks[track_name])
+            pygame.mixer.music.set_volume(0.5)  # volume entre 0.0 et 1.0
+            pygame.mixer.music.play(-1 if loop else 0)
+
+    def stop_music(self):
+        pygame.mixer.music.stop()
+
+    def pause_music(self):
+        pygame.mixer.music.pause()
+
+    def resume_music(self):
+        pygame.mixer.music.unpause()
+
 class Rope(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         self.anchor = pygame.Vector2(x, y)
         self.length = None
         self.image = pygame.image.load("boutons/torch1.png").convert_alpha()  # Load your image
-        self.image = pygame.transform.scale(self.image, (35, 90) )
+        self.image = pygame.transform.scale(self.image, (45, 75) )
     def attach(self, ball):
         self.length = (ball.pos - self.anchor).length()
         ball.is_attached, ball.attached_rope = True, self
@@ -114,7 +156,7 @@ class Platform(pygame.sprite.Sprite):
         self.bouncy = bouncy
 
         # Choose texture based on bouncy state
-        texture_path = "boutons/wood.png" if self.bouncy else "boutons/SPIKES.png"
+        texture_path = "boutons/wood.png" if self.bouncy else "boutons/spikes.png"
         self.image = pygame.image.load(texture_path).convert_alpha()
         self.image = pygame.transform.scale(self.image, (width, height))
 
@@ -126,14 +168,15 @@ class SlopedPlatform(pygame.sprite.Sprite):
         self.start = pygame.Vector2(x1, y1)
         self.end = pygame.Vector2(x2, y2)
         self.bouncy = bouncy
-        self.thickness = 25
+        self.thickness = 10
+        self.color = GREEN if bouncy else RED
 
+        # Calculate slope properties
         self.length = int((self.end - self.start).length())
         self.angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
 
-        # Choose texture based on bouncy state
-        texture_path = "boutons/wood.png" if self.bouncy else "boutons/SPIKES.png"
-        self.base_image = pygame.image.load(texture_path).convert_alpha()
+        # Load and scale the image to the slope's length and thickness
+        self.base_image = pygame.image.load("boutons/wood.png").convert_alpha()
         self.base_image = pygame.transform.scale(self.base_image, (self.length, self.thickness))
         self.image = pygame.transform.rotate(self.base_image, -self.angle)
 
