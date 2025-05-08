@@ -124,6 +124,9 @@ def draw_aiming_arrow(start_pos, direction, color, length=100, segment_length=10
         segment_end = start_pos + direction.normalize() * (i + segment_length)
         pygame.draw.line(screen, color, start_pos + pygame.Vector2(camera_x, 0), segment_end + pygame.Vector2(camera_x, 0), 2)
 
+
+
+
 def aiming_screen():
     global initial_velocity, game_state, ball, camera_x  # Ajout de camera_x ici
 
@@ -132,7 +135,7 @@ def aiming_screen():
     background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
     screen.blit(background_img, (0, 0))
 
-    render_text("Utilise les flèches pour viser, puis Entrée pour tirer", small_font, RED, WIDTH // 2, 50, screen)
+
 
     # Gestion des touches
     keys = pygame.key.get_pressed()

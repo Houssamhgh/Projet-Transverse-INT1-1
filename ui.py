@@ -29,26 +29,24 @@ def draw_button(screen, text, x, y, width, height, color, font, action=None):
 import math
 from settings import *
 
-def draw_trajectory(ball_pos, velocity, camera_x=0, steps=100, dt=0.1):
-    pos = pygame.Vector2(ball_pos)
+def draw_trajectory(start_pos, velocity, camera_x=0, steps=100, dt=0.1):
+    pos = pygame.Vector2(start_pos)
     vel = pygame.Vector2(velocity)
     points = []
 
-    # Calcul de la trajectoire avec un nombre d'étapes et un delta time
-    for _ in range(steps):
-        vel.y += GRAVITY * dt  # Mise à jour de la vitesse en fonction de la gravité
-        pos += vel * dt  # Mise à jour de la position avec la vitesse
+    for step in range(steps):
+        t = step * dt
+        x = pos.x + vel.x * t
+        y = pos.y + vel.y * t + 0.5 * GRAVITY * (t ** 2)
 
-        points.append((int(pos.x - camera_x), int(pos.y)))
-
-        # Arrêter la trajectoire si elle touche le sol (par exemple)
-        if pos.y >= HEIGHT - 10:  # Si la balle touche le sol
+        screen_x = int(x - camera_x)
+        screen_y = int(y)
+        if screen_y > HEIGHT:  # Ne pas dessiner en dehors de l'écran
             break
+        points.append((screen_x, screen_y))
 
-    # Dessiner la trajectoire
     for point in points:
-        pygame.draw.circle(pygame.display.get_surface(), WHITE, point, 2)
-
+        pygame.draw.circle(pygame.display.get_surface(), (255, 255,0),point,2)
 
 def draw_direction_arrow(screen, start_pos, velocity, camera_x=0):
     end_pos = start_pos + velocity * 10  # Multiplier pour allonger la flèche
@@ -63,3 +61,34 @@ def draw_direction_arrow(screen, start_pos, velocity, camera_x=0):
     right = (end_pos.x - camera_x - arrow_size * math.cos(angle + 0.5),
              end_pos.y - arrow_size * math.sin(angle + 0.5))
     pygame.draw.polygon(screen, BLUE, [(end_pos.x - camera_x, end_pos.y), left, right])
+
+def draw_parabolic_arrow(screen, start_pos, velocity, camera_x=0, steps=100, dt=0.1):
+    """
+    Dessine une flèche représentant la trajectoire parabolique de l'araignée,
+    prenant en compte la montée et la descente de la balle.
+    """
+    pos = pygame.Vector2(start_pos)
+    vel = pygame.Vector2(velocity)
+    points = []
+
+    # Calculer les points de la trajectoire parabolique
+    for step in range(steps):
+        t = step * dt
+        x = pos.x + vel.x * t
+        y = pos.y + vel.y * t + 0.5 * GRAVITY * (t ** 2)
+
+        # Arrêter si la balle atteint le sol
+        if y > HEIGHT:
+            break
+
+        # Calculer les points de la flèche
+        screen_x = int(x - camera_x)
+        screen_y = int(y)
+        points.append((screen_x, screen_y))
+
+    # Dessiner la trajectoire sous forme de parabole (une série de points reliés)
+    for i in range(len(points) - 1):
+        pygame.draw.line(screen, BLUE, points[i], points[i + 1], 3)  # Relier les points par des lignes
+
+    # Optionnel : Dessiner un petit cercle au point d'origine pour bien visualiser le départ
+    pygame.draw.circle(screen, BLUE,points[0],5)
