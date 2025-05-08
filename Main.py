@@ -238,13 +238,8 @@ def game_screen():
         game_state = "game_over"
 
     if pygame.Rect(ball.pos.x - ball.radius, ball.pos.y - ball.radius, ball.radius * 2, ball.radius * 2).colliderect(finish_line):
-
         current_level_index += 1
-        if current_level_index < 4:
-            start_game_by_index(current_level_index)
-        else:
-
-            game_state = "win_level"
+        game_state = "win_level"
 
     for rope in ropes:
         rope.update(ball)
@@ -293,8 +288,16 @@ def win_level_screen():
     screen.blit(background_img, (0, 0))
 
     draw_button(screen, "Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, small_font, lambda: start_game_by_index(current_level_index))
+    load_img = pygame.image.load("boutons/HARD.png").convert_alpha()
+    load_img = pygame.transform.scale(load_img, (210, 92))
+    load_rect = load_img.get_rect(center=(WIDTH // 1.31599, 299))
+    screen.blit(load_img, load_rect)
 
     draw_button(screen, "Menu", WIDTH // 2 - 100, HEIGHT // 2 + 170, 200, 50, GRAY, small_font, lambda: set_state("menu"))
+    load_img = pygame.image.load("boutons/MENU.png").convert_alpha()
+    load_img = pygame.transform.scale(load_img, (215, 93))
+    load_rect = load_img.get_rect(center=( WIDTH // 2 -4, HEIGHT // 2 +197))
+    screen.blit(load_img, load_rect)
 
 # Boucle principale
 running = True
