@@ -33,7 +33,7 @@ class SoundManager:
     def play_music(self, track_name, loop=True):
         if track_name in self.music_tracks:
             pygame.mixer.music.load(self.music_tracks[track_name])
-            pygame.mixer.music.set_volume(0.5)  # volume entre 0.0 et 1.0
+            pygame.mixer.music.set_volume(0.5)  #volume of the music
             pygame.mixer.music.play(-1 if loop else 0)
 
     def stop_music(self):
@@ -56,7 +56,7 @@ class Rope(pygame.sprite.Sprite):
         self.length = (ball.pos - self.anchor).length()
         ball.is_attached, ball.attached_rope = True, self
         ball.initial_velocity = ball.velocity.length()
-#
+
     def update(self, ball):
         if ball.is_attached and ball.attached_rope == self:
             keys = pygame.key.get_pressed()
@@ -170,6 +170,7 @@ class SlopedPlatform(pygame.sprite.Sprite):
         self.bouncy = bouncy
         self.thickness = 25
 
+        # Calculate slope properties
         self.length = int((self.end - self.start).length())
         self.angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
 
