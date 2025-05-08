@@ -198,7 +198,7 @@ def aiming_screen():
 
 
     WIDTH, HEIGHT = 800, 600
-    background_img = pygame.image.load("boutons/AIMBG.png")
+    background_img = pygame.image.load("boutons/AIMBACKG.png")
     background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
     screen.blit(background_img, (0, 0))
 
