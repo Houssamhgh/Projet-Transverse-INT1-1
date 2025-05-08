@@ -254,9 +254,8 @@ def game_screen():
     background = pygame.image.load("boutons/BACKGB.jpeg")
     background = pygame.transform.scale(background, (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
-    bg_x = -camera_x % background.get_width()
-    screen.blit(background, (bg_x - background.get_width(), 0))
-    screen.blit(background, (bg_x, 0))
+
+
 
     for rope in ropes:
         rope.draw(screen, ball, camera_x)
