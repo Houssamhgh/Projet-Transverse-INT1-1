@@ -226,7 +226,7 @@ def settings_screen():
     load_img = pygame.image.load("boutons/MUSIC.png").convert_alpha()
     load_img = pygame.transform.scale(load_img, (205, 85))
     load_rect = load_img.get_rect(center=(WIDTH // 2.05, 243))
-    screen.blit(load_img, load_rect)
+    screen.blit(load_img, load_rect)#
 
     draw_button(screen, f"Sounds : {'On' if sounds_on else 'Off'}", 436, 300, 50, 42, GRAY, small_font, toggle_sounds)
     load_img = pygame.image.load("boutons/SOUND.png").convert_alpha()
