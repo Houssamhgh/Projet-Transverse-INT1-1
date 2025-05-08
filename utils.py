@@ -113,8 +113,9 @@ class Platform(pygame.sprite.Sprite):
         self.rect = pygame.Rect(x, y, width, height)
         self.bouncy = bouncy
 
-        # Load and scale the image
-        self.image = pygame.image.load("boutons/wood.png").convert_alpha()
+        # Choose texture based on bouncy state
+        texture_path = "boutons/wood.png" if self.bouncy else "boutons/spikes.png"
+        self.image = pygame.image.load(texture_path).convert_alpha()
         self.image = pygame.transform.scale(self.image, (width, height))
 
     def draw(self, screen, camera_x):
