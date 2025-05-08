@@ -51,7 +51,7 @@ class Rope(pygame.sprite.Sprite):
         self.anchor = pygame.Vector2(x, y)
         self.length = None
         self.image = pygame.image.load("boutons/torch1.png").convert_alpha()  # Load your image
-        self.image = pygame.transform.scale(self.image, (45, 75) )
+        self.image = pygame.transform.scale(self.image, (30, 100) )
     def attach(self, ball):
         self.length = (ball.pos - self.anchor).length()
         ball.is_attached, ball.attached_rope = True, self
@@ -156,7 +156,7 @@ class Platform(pygame.sprite.Sprite):
         self.bouncy = bouncy
 
         # Choose texture based on bouncy state
-        texture_path = "boutons/wood.png" if self.bouncy else "boutons/spikes.png"
+        texture_path = "boutons/wood.png" if self.bouncy else "boutons/SPIKES.png"
         self.image = pygame.image.load(texture_path).convert_alpha()
         self.image = pygame.transform.scale(self.image, (width, height))
 
@@ -168,15 +168,14 @@ class SlopedPlatform(pygame.sprite.Sprite):
         self.start = pygame.Vector2(x1, y1)
         self.end = pygame.Vector2(x2, y2)
         self.bouncy = bouncy
-        self.thickness = 10
-        self.color = GREEN if bouncy else RED
+        self.thickness = 25
 
-        # Calculate slope properties
         self.length = int((self.end - self.start).length())
         self.angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
 
-        # Load and scale the image to the slope's length and thickness
-        self.base_image = pygame.image.load("boutons/wood.png").convert_alpha()
+        # Choose texture based on bouncy state
+        texture_path = "boutons/wood.png" if self.bouncy else "boutons/SPIKES.png"
+        self.base_image = pygame.image.load(texture_path).convert_alpha()
         self.base_image = pygame.transform.scale(self.base_image, (self.length, self.thickness))
         self.image = pygame.transform.rotate(self.base_image, -self.angle)
 
