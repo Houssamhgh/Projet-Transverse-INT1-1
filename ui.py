@@ -17,7 +17,7 @@ def draw_button(screen, text, x, y, width, height, color, font, action=None):
     rect = pygame.Rect(x, y, width, height)
     pygame.draw.rect(screen, color, rect)
     if rect.collidepoint(mouse_pos):
-        pygame.draw.rect(screen, BLUE, rect, 3)
+        pygame.draw.rect(screen, BLACK, rect, 3)
         if mouse_click[0] and action and click_released:
             action()
             click_released = False

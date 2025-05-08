@@ -28,6 +28,7 @@ current_music_playing = None
 starting_sound_played = False
 ending_sound_played = False
 win_screen_display_time=None
+aiming_start_time=None
 
 
 # Trajectoire initiale
@@ -125,13 +126,14 @@ def start_game_by_index(index):
     platforms = generate_platforms(index)
     slopes = generate_slopes(index)
     finish_line = pygame.Rect(4200, 0, 20, HEIGHT)
-    camera_x = 0
+    camera_x = ball.pos.x - CAMERA_OFFSET
     initial_velocity = pygame.Vector2(0, 0)
     if sounds_on and not starting_sound_played:
         sound_manager.play_sound('starting_sound')
         starting_sound_played = True
 
     # Début avec une vitesse nulle
+    aiming_start_time = pygame.time.get_ticks()
     game_state = "aiming"  # Lancement directement dans l'écran d'aiming
 
 def menu_screen():
@@ -194,7 +196,7 @@ def draw_aiming_arrow(start_pos, direction, color, length=100, segment_length=10
         pygame.draw.line(screen, color, start_pos + pygame.Vector2(camera_x, 0), segment_end + pygame.Vector2(camera_x, 0), 2)
 
 def aiming_screen():
-    global initial_velocity, game_state, ball, camera_x, starting_sound_played  # Ajout de camera_x ici
+    global initial_velocity, game_state, ball, camera_x, starting_sound_played
 
 
 
@@ -215,7 +217,8 @@ def aiming_screen():
         initial_velocity.y += 0.2
 
     # Si tir validé
-    if keys[pygame.K_RETURN] or keys[pygame.K_SPACE]:
+
+    if keys[pygame.K_RETURN] or keys[pygame.K_SPACE] :
         ball.velocity = initial_velocity.copy()
         game_state = "playing"
 
@@ -229,7 +232,7 @@ def aiming_screen():
     # Affichage de la trajectoire
     draw_trajectory(ball.pos, direction, camera_x=camera_x, steps=100, dt=0.1)
 
-    ball.draw(screen, camera_x)
+
     for rope in ropes:
         rope.draw(screen, ball, camera_x)
     ball.draw(screen, camera_x)
@@ -240,7 +243,7 @@ def aiming_screen():
 
 
     # Mise à jour de la caméra
-    camera_x = ball.pos.x - CAMERA_OFFSET
+
 
 def rules_screen():
 
