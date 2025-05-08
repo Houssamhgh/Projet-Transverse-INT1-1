@@ -35,7 +35,7 @@ def draw_trajectory(start_pos, velocity, camera_x=0, steps=100, dt=0.1):
     pos = pygame.Vector2(start_pos)
     vel = pygame.Vector2(velocity)
     points = []
-
+#
     for step in range(steps):
         t = step * dt
         x = pos.x + vel.x * t

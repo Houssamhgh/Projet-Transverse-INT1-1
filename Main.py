@@ -202,7 +202,6 @@ def aiming_screen():
     background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
     screen.blit(background_img, (0, 0))
 
-    render_text("Utilise les flèches pour viser, puis Entrée pour tirer", small_font, RED, WIDTH // 2, 50, screen)
 
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT]:
