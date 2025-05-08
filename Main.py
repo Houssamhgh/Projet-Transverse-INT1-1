@@ -27,6 +27,7 @@ gravity = 0.5
 current_music_playing = None
 starting_sound_played = False
 ending_sound_played = False
+win_screen_display_time=None
 
 
 # Trajectoire initiale
@@ -277,6 +278,7 @@ def settings_screen():
     load_img = pygame.transform.scale(load_img, (200, 80))
     load_rect = load_img.get_rect(center=(WIDTH // 2, 525))
     screen.blit(load_img, load_rect)
+
 def load_game_screen():
     WIDTH, HEIGHT = 800, 600
     background_img = pygame.image.load("boutons/LEVELMENU.png")  # Changez le nom selon votre fichier
@@ -306,8 +308,9 @@ def load_game_screen():
     load_img = pygame.transform.scale(load_img, (210, 90))
     load_rect = load_img.get_rect(center=(WIDTH // 1.199, 550))
     screen.blit(load_img, load_rect)
+
 def game_screen():
-    global camera_x, game_state, current_level_index, starting_sound_played
+    global camera_x, game_state, current_level_index, starting_sound_played, win_screen_display_time
 
     keys = pygame.key.get_pressed()
     ball.update(keys, platforms, slopes, ropes)
@@ -327,7 +330,11 @@ def game_screen():
                 sound_manager.play_sound('levelup_sound')
                 starting_sound_played = False
             current_level_index += 1
+        else:
+            win_screen_display_time = pygame.time.get_ticks()
+
         game_state = "win_level"
+
 
     for rope in ropes:
         rope.update(ball)
@@ -352,6 +359,7 @@ def game_screen():
     finish_img = pygame.image.load("boutons/FINISH.png").convert_alpha()
     finish_img = pygame.transform.scale(finish_img, (finish_line.width, finish_line.height))
     screen.blit(finish_img, (finish_line.x - camera_x, finish_line.y))
+
 def game_over_screen():
     WIDTH, HEIGHT = 800, 600
     background_img = pygame.image.load("boutons/GAMEOVER.png")
@@ -370,8 +378,9 @@ def game_over_screen():
     load_img = pygame.transform.scale(load_img, (210, 90))
     load_rect = load_img.get_rect(center=(WIDTH // 2.05, 500))
     screen.blit(load_img, load_rect)
+
 def win_level_screen():
-    global current_level_index, ending_sound_played
+    global win_screen_display_time, ending_sound_played
 
     WIDTH, HEIGHT = 800, 600
     background_img = pygame.image.load("boutons/CONGRATS.png")
@@ -392,14 +401,19 @@ def win_level_screen():
     load_img = pygame.transform.scale(load_img, (220, 93))
     load_rect = load_img.get_rect(center=(WIDTH // 2 - 4, HEIGHT // 2 + 197))
     screen.blit(load_img, load_rect)
-    if current_level_index == 2 and sounds_on and not ending_sound_played:
-        if music_on:
-            sound_manager.pause_music()
-        sound_manager.play_sound('win_sound')
-        while pygame.mixer.get_busy():
-            pygame.time.delay(100)
-        if music_on:
-            sound_manager.resume_music()
+
+    if win_screen_display_time and sounds_on and not ending_sound_played:
+        now = pygame.time.get_ticks()
+        if now - win_screen_display_time >= 300:
+            if sounds_on:
+                if music_on:
+                    sound_manager.pause_music()
+            sound_manager.play_sound('win_sound')
+            ending_sound_played = True
+            while pygame.mixer.get_busy():
+                    pygame.time.delay(100)
+            if music_on:
+                sound_manager.resume_music()
 # Boucle principale
 running = True
 while running:
