@@ -113,10 +113,12 @@ class Platform(pygame.sprite.Sprite):
         self.rect = pygame.Rect(x, y, width, height)
         self.bouncy = bouncy
 
-    def draw(self, screen, camera_x):
-        color = GREEN if self.bouncy else RED
-        pygame.draw.rect(screen, color, self.rect.move(-camera_x, 0))
+        # Load and scale the image
+        self.image = pygame.image.load("boutons/wood.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (width, height))
 
+    def draw(self, screen, camera_x):
+        screen.blit(self.image, (self.rect.x - camera_x, self.rect.y))
 class SlopedPlatform(pygame.sprite.Sprite):
     def __init__(self, x1, y1, x2, y2, bouncy=True):
         super().__init__()
@@ -125,6 +127,15 @@ class SlopedPlatform(pygame.sprite.Sprite):
         self.bouncy = bouncy
         self.thickness = 8
         self.color = GREEN if bouncy else RED
+
+        # Calculate slope properties
+        self.length = int((self.end - self.start).length())
+        self.angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
+
+        # Load and scale the image to the slope's length and thickness
+        self.base_image = pygame.image.load("boutons/wood.png").convert_alpha()
+        self.base_image = pygame.transform.scale(self.base_image, (self.length, self.thickness))
+        self.image = pygame.transform.rotate(self.base_image, -self.angle)
 
     def draw(self, screen, camera_x):
         start = self.start - pygame.Vector2(camera_x, 0)
