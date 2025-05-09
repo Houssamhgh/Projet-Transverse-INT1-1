@@ -140,9 +140,12 @@ class Ball(pygame.sprite.Sprite):
                     self.is_alive = False
                     self.kill()
                     break
-
-        for slope in slopes:
-            slope.check_collision_and_bounce(self)
+        sub_steps = 15  # plus si très rapide
+        dt = 1 / sub_steps
+        for _ in range(sub_steps):
+            self.pos += self.velocity * dt
+            for slope in slopes:
+                slope.check_collision_and_bounce(self)
 
     def draw(self, screen, camera_x):
         self.image = pygame.image.load("boutons/spider.png").convert_alpha()
@@ -198,19 +201,30 @@ class SlopedPlatform(pygame.sprite.Sprite):
         closest_point = self.start + proj_length_clamped * line_unit
         delta = ball.pos - closest_point
         distance = delta.length()
+
         if distance < ball.radius:
+            penetration = ball.radius - distance
+            if distance != 0:
+                correction = delta.normalize() * penetration * 1.1  # Augmentation pour corriger la position de manière plus significative
+            else:
+                correction = normal * penetration
+
+            ball.pos += correction
+
             if ball.velocity.dot(normal) > 0:
                 normal = -normal
-            penetration = ball.radius - distance
-            correction = delta.normalize() * penetration if distance != 0 else normal * penetration
-            ball.pos += correction
+
             if self.bouncy:
-                ball.velocity = ball.velocity.reflect(normal) * 1.2
+                bounce_factor = 1.0
+                v_n = ball.velocity.dot(normal) * normal
+                v_t = ball.velocity - v_n
+                ball.velocity = v_t * 0.98 - v_n * bounce_factor
             else:
                 ball.is_alive = False
                 ball.kill()
-            return True
+            return True  # Collision!
         return False
+
 
 def generate_rope_chain(index):
     return [[Rope(1000, 150), Rope(1300, 100), Rope(2300, 100), Rope(3000, 100), Rope(3500, 80), Rope(5000, 100)],
