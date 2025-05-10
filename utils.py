@@ -255,12 +255,7 @@ def generate_platforms(index):
          Platform(2000, 500, 150, 20, False),
          Platform(2500, 150, 150, 20, True),
          Platform(2500, 400, 150, 20, True),
-         Platform(2500, 550, 150, 20, False)],
-
-        [Platform(700, 400, 150, 10, True),
-         Platform(1050, 400, 150, 20, False),
-         Platform(1500, 400, 150, 20, True),
-         Platform(2000, 500, 150, 20, True)]
+         Platform(2500, 550, 150, 20, False)]
     ]
     return levels[index]
 def generate_slopes(index):
@@ -288,11 +283,6 @@ def generate_slopes(index):
         SlopedPlatform(4000,250, 4000, 350,True ),
          SlopedPlatform(4000,0, 4000, 100,False),
          SlopedPlatform(4000,500, 4000, 600,False),
-         ],
-
-        [SlopedPlatform(350, 300, 600, 400),
-        SlopedPlatform(4000,400, 4000, 300 ),
-        SlopedPlatform(5000,400, 4000, 300 ),
-        ]
+         ]
     ][index]
 
