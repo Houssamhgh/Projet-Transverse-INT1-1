@@ -400,13 +400,17 @@ def win_level_screen():
     if current_level_index<2:
         draw_button(screen, "Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, small_font,
                 lambda: start_game_by_index(current_level_index))
+        load_img = pygame.image.load("boutons/NEXTLVL.png").convert_alpha()
+        load_img = pygame.transform.scale(load_img, (215, 82))
+        load_rect = load_img.get_rect(center=(WIDTH // 2 - 4, HEIGHT // 2 + 120))
+        screen.blit(load_img, load_rect)
     else :
         draw_button(screen, "Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, small_font,
                     lambda: start_game_by_index(0))
-    load_img = pygame.image.load("boutons/NEXTLVL.png").convert_alpha()
-    load_img = pygame.transform.scale(load_img, (215, 82))
-    load_rect = load_img.get_rect(center=(WIDTH // 2 - 4, HEIGHT // 2 + 120))
-    screen.blit(load_img, load_rect)
+        load_img = pygame.image.load("boutons/PLAYAGAIN.png").convert_alpha()
+        load_img = pygame.transform.scale(load_img, (215, 82))
+        load_rect = load_img.get_rect(center=(WIDTH // 2 - 4, HEIGHT // 2 + 120))
+        screen.blit(load_img, load_rect)
 
 
 
