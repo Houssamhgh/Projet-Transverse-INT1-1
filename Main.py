@@ -215,7 +215,10 @@ def aiming_screen():
         initial_velocity.y -= 0.2
     if keys[pygame.K_DOWN]:
         initial_velocity.y += 0.2
-
+    if initial_velocity.x>20:
+        initial_velocity.x =20
+    if initial_velocity.y<-20:
+        initial_velocity.y=-20
     # Si tir validé
 
     if keys[pygame.K_RETURN] or keys[pygame.K_SPACE] :
@@ -335,7 +338,7 @@ def game_screen():
         starting_sound_played = False
 
     if pygame.Rect(ball.pos.x - ball.radius, ball.pos.y - ball.radius, ball.radius * 2, ball.radius * 2).colliderect(finish_line):
-        if current_level_index < 2:
+        if current_level_index < 3:
             if sounds_on:
                 sound_manager.play_sound('levelup_sound')
                 starting_sound_played = False
@@ -397,7 +400,7 @@ def win_level_screen():
     background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
     screen.blit(background_img, (0, 0))
 
-    if current_level_index<2:
+    if current_level_index<3:
         draw_button(screen, "Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, small_font,
                 lambda: start_game_by_index(current_level_index))
         load_img = pygame.image.load("boutons/NEXTLVL.png").convert_alpha()

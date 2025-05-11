@@ -140,7 +140,7 @@ class Ball(pygame.sprite.Sprite):
                     self.is_alive = False
                     self.kill()
                     break
-        sub_steps = 15  # plus si très rapide
+        sub_steps = 25
         dt = 1 / sub_steps
         for _ in range(sub_steps):
             self.pos += self.velocity * dt
@@ -205,7 +205,7 @@ class SlopedPlatform(pygame.sprite.Sprite):
         if distance < ball.radius:
             penetration = ball.radius - distance
             if distance != 0:
-                correction = delta.normalize() * penetration * 1.1  # Augmentation pour corriger la position de manière plus significative
+                correction = delta.normalize() * penetration * 1.1
             else:
                 correction = normal * penetration
 
