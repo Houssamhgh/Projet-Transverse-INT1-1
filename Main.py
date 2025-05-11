@@ -407,7 +407,7 @@ def win_level_screen():
     background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
     screen.blit(background_img, (0, 0))
 
-    if current_level_index<=2:
+    if current_level_index<2:
         draw_button(screen, "Play Again", WIDTH // 2 - 100, HEIGHT // 2 + 100, 200, 50, GRAY, small_font,
                 lambda: start_game_by_index(current_level_index))
         load_img = pygame.image.load("boutons/NEXTLVL.png").convert_alpha()
