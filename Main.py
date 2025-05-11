@@ -7,7 +7,7 @@ from settings import *
 from utils import  Ball, generate_rope_chain, generate_platforms, generate_slopes, Rope, SoundManager
 from ui import render_text, draw_button, draw_trajectory, draw_direction_arrow
 
-# Initialisation pygame
+#pygame initialisation
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Spidey Hook")
@@ -15,7 +15,7 @@ clock = pygame.time.Clock()
 sound_manager = SoundManager()
 
 
-# Etat global
+#global variables
 game_state = "menu"
 music_on = True
 sounds_on = True
@@ -30,11 +30,7 @@ ending_sound_played = False
 win_screen_display_time=None
 
 
-
-# Trajectoire initiale
-initial_velocity = pygame.Vector2(8, -5)
-
-# Niveau
+#usefull variables in the level
 current_level_index = 0
 camera_x = 0
 ball = Ball(100, HEIGHT - 100)
@@ -43,17 +39,18 @@ platforms = generate_platforms(current_level_index)
 slopes = generate_slopes(current_level_index)
 finish_line = pygame.Rect(4200, 0, 20, HEIGHT)
 
-# Araignées dans le menu
 
 
 
 def set_state(state):
+    #function that sets the game state
     global game_state
     game_state = state
 
 
 
 def toggle_music():
+    #function that toggles the music on and off
     global music_on, current_music_playing
     music_on = not music_on
     if not music_on:
@@ -66,12 +63,14 @@ def toggle_music():
 
 
 def toggle_sounds():
+    #function that toggles the sounds on and off
     global sounds_on
     sounds_on = not sounds_on
 
 
 
 def change_music_screen():
+    #function that displays the change music screen
     global selected_music, current_music_playing
 
     WIDTH, HEIGHT = 800, 600
@@ -81,6 +80,7 @@ def change_music_screen():
 
 
     def set_music(track_name):
+        #function that sets the music
         global selected_music, current_music_playing
         selected_music = track_name
         current_music_playing = track_name
@@ -88,6 +88,9 @@ def change_music_screen():
             sound_manager.play_music(track_name)
         set_state("settings")
 
+
+
+    #here we draw all the buttons
     draw_button(screen, "Track 1", WIDTH // 2 - 75, 150, 150, 50, GRAY, small_font, lambda: set_music("track1"))
     start_img = pygame.image.load("boutons/TRACK1.png").convert_alpha()
     start_img = pygame.transform.scale(start_img, (230, 70))
@@ -112,6 +115,7 @@ def change_music_screen():
     screen.blit(start_img, start_rect)
 
 def start_game(difficulty='easy'):
+    #function to launch the game according to the difficulty
     global current_level_index
     index_map = {'easy': 0, 'medium': 1, 'hard': 2}
     index = index_map.get(difficulty, 0)
@@ -119,9 +123,10 @@ def start_game(difficulty='easy'):
     start_game_by_index(index)
 
 def start_game_by_index(index):
+    #function to launch the game according to the index
     global ball, ropes, platforms, slopes, camera_x, finish_line, game_state, current_level_index, initial_velocity, starting_sound_played
     current_level_index = index
-    ball = Ball(0, HEIGHT - 100)  # Positionnée en bas à gauche de l'écran
+    ball = Ball(0, HEIGHT - 100)
     ropes = generate_rope_chain(index)
     platforms = generate_platforms(index)
     slopes = generate_slopes(index)
@@ -132,11 +137,11 @@ def start_game_by_index(index):
         sound_manager.play_sound('starting_sound')
         starting_sound_played = True
 
-    # Début avec une vitesse nulle
     aiming_start_time = pygame.time.get_ticks()
-    game_state = "aiming"  # Lancement directement dans l'écran d'aiming
+    game_state = "aiming" #directly launch the aiming screen
 
 def menu_screen():
+    #function that displays the menu screen
     global current_music_playing, selected_music
     WIDTH, HEIGHT = 800, 600
     background_img = pygame.image.load("boutons/MENU_NEW.png")
@@ -154,6 +159,7 @@ def menu_screen():
         current_music_playing = selected_music
 
 
+    #here we draw all the buttons
     draw_button(screen, "Start Game", WIDTH // 2 - 100, 230, 190, 50, GRAY, small_font, lambda: start_game("easy"))
     start_img = pygame.image.load("boutons/START.png").convert_alpha()
     start_img = pygame.transform.scale(start_img, (240, 100))
@@ -178,24 +184,23 @@ def menu_screen():
     load_rect = load_img.get_rect(center=(WIDTH // 1.2, 550))
     screen.blit(load_img, load_rect)
 
-camera_x = 0  # Global
 
 def draw_platforms(camera_x):
-    # Cette fonction dessine les plateformes sur l'écran
+    #this function draws platforms on the screen
     for platform in platforms:
-        platform.draw(screen, camera_x)  # On suppose que platform.draw utilise .rect
+        platform.draw(screen, camera_x)
 
 def draw_aiming_arrow(start_pos, direction, color, length=100, segment_length=10):
-    # Si la direction est un vecteur nul, on évite la normalisation
+    #function that draws a discontinuous arrow
     if direction.length() == 0:
-        return  # Si la direction est nulle, on ne dessine rien
+        return  #if the direction is zero, do nothing
 
-    # Dessine une flèche discontinue
-    for i in range(0, length, segment_length * 2):  # Laisse un espace entre chaque segment
+    for i in range(0, length, segment_length * 2):  
         segment_end = start_pos + direction.normalize() * (i + segment_length)
         pygame.draw.line(screen, color, start_pos + pygame.Vector2(camera_x, 0), segment_end + pygame.Vector2(camera_x, 0), 2)
 
 def aiming_screen():
+    #function that displays the aiming screen
     global initial_velocity, game_state, ball, camera_x, starting_sound_played
 
 
@@ -206,6 +211,7 @@ def aiming_screen():
     screen.blit(background_img, (0, 0))
 
 
+    #input gestion during the aiming phase
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT]:
         initial_velocity.x -= 0.2
@@ -216,21 +222,20 @@ def aiming_screen():
     if keys[pygame.K_DOWN]:
         initial_velocity.y += 0.2
 
-    # Si tir validé
-
+    #if shot
     if keys[pygame.K_RETURN] or keys[pygame.K_SPACE] :
         ball.velocity = initial_velocity.copy()
         game_state = "playing"
 
-    # Affichage de la flèche de visée discontinue
+    #draw the aiming arrow
     draw_aiming_arrow(ball.pos, initial_velocity, GREEN, length=100)
 
-    # Affichage de la flèche de direction (solide et de couleur différente)
     direction = initial_velocity
     pygame.draw.line(screen, WHITE, ball.pos - pygame.Vector2(camera_x, 0), ball.pos + direction * 10 - pygame.Vector2(camera_x, 0), 2)
 
-    # Affichage de la trajectoire
+    #drawing of the trajectory
     draw_trajectory(ball.pos, direction, camera_x=camera_x, steps=100, dt=0.1)
+
 
 
     for rope in ropes:
@@ -242,10 +247,9 @@ def aiming_screen():
         slope.draw(screen, camera_x)
 
 
-    # Mise à jour de la caméra
-
 
 def rules_screen():
+    #function that displays the rules screen
 
     WIDTH, HEIGHT = 800, 600
     background_img = pygame.image.load("boutons/CREDIT.png")
@@ -259,6 +263,7 @@ def rules_screen():
     screen.blit(load_img, load_rect)
 
 def settings_screen():
+    #function that displays the settings screen
     WIDTH, HEIGHT = 800, 600
     background_img = pygame.image.load("boutons/SETBG.png")  # Changez le nom selon votre fichier
     background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
@@ -290,6 +295,7 @@ def settings_screen():
     screen.blit(load_img, load_rect)
 
 def load_game_screen():
+    #function that displays the load game screen
     WIDTH, HEIGHT = 800, 600
     background_img = pygame.image.load("boutons/LEVELMENU.png")  # Changez le nom selon votre fichier
     background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
@@ -320,6 +326,7 @@ def load_game_screen():
     screen.blit(load_img, load_rect)
 
 def game_screen():
+    #function that displays the game screen
     global camera_x, game_state, current_level_index, starting_sound_played, win_screen_display_time
 
     keys = pygame.key.get_pressed()
@@ -334,6 +341,7 @@ def game_screen():
         game_state = "game_over"
         starting_sound_played = False
 
+    #check for the collision with the finish line
     if pygame.Rect(ball.pos.x - ball.radius, ball.pos.y - ball.radius, ball.radius * 2, ball.radius * 2).colliderect(finish_line):
         if current_level_index < 2:
             if sounds_on:
@@ -356,7 +364,7 @@ def game_screen():
     screen.blit(background, (0, 0))
 
 
-
+    #dr&awing the level
     for rope in ropes:
         rope.draw(screen, ball, camera_x)
     ball.draw(screen, camera_x)
@@ -371,6 +379,7 @@ def game_screen():
     screen.blit(finish_img, (finish_line.x - camera_x, finish_line.y))
 
 def game_over_screen():
+    #function that displays the game over screen
     WIDTH, HEIGHT = 800, 600
     background_img = pygame.image.load("boutons/GAMEOVER.png")
     background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
@@ -390,6 +399,7 @@ def game_over_screen():
     screen.blit(load_img, load_rect)
 
 def win_level_screen():
+    #function that displays the win level screen
     global win_screen_display_time, ending_sound_played
 
     WIDTH, HEIGHT = 800, 600
@@ -432,7 +442,8 @@ def win_level_screen():
                     pygame.time.delay(100)
             if music_on:
                 sound_manager.resume_music()
-# Boucle principale
+
+#main loop
 running = True
 while running:
     for event in pygame.event.get():
@@ -446,7 +457,7 @@ while running:
             else:
                 input_text += event.unicode
 
-    # Gestion des différentes scènes du jeu
+    #game state gestion
     if game_state == "menu":
         menu_screen()
     elif game_state == "rules":
@@ -458,15 +469,15 @@ while running:
     elif game_state == "load_game":
         load_game_screen()
     elif game_state == "aiming":
-        aiming_screen()  # Affichage de la sélection de la trajectoire
+        aiming_screen()
     elif game_state == "playing":
-        game_screen()  # Affichage du jeu une fois la trajectoire choisie
+        game_screen() 
     elif game_state == "game_over":
         game_over_screen()
     elif game_state == "win_level":
         win_level_screen()
 
-    # Mise à jour de l'affichage
+    #display update
     pygame.display.flip()
     clock.tick(60)
 
