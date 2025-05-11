@@ -221,6 +221,10 @@ def aiming_screen():
         initial_velocity.y -= 0.2
     if keys[pygame.K_DOWN]:
         initial_velocity.y += 0.2
+    if initial_velocity.x>20:
+        initial_velocity.x =20
+    if initial_velocity.y<-20:
+        initial_velocity.y=-20
 
     #if shot
     if keys[pygame.K_RETURN] or keys[pygame.K_SPACE] :
