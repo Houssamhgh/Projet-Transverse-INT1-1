@@ -205,7 +205,7 @@ class SlopedPlatform(pygame.sprite.Sprite):
         if distance < ball.radius:
             penetration = ball.radius - distance
             if distance != 0:
-                correction = delta.normalize() * penetration * 1.1
+                correction = delta.normalize() * penetration * 5
             else:
                 correction = normal * penetration
 

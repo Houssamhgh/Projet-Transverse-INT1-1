@@ -323,7 +323,7 @@ def load_game_screen():
     screen.blit(load_img, load_rect)
 
 def game_screen():
-    global camera_x, game_state, current_level_index, starting_sound_played, win_screen_display_time
+    global camera_x, game_state, current_level_index, starting_sound_played, win_screen_display_time, ending_sound_played
 
     keys = pygame.key.get_pressed()
     ball.update(keys, platforms, slopes, ropes)
@@ -338,13 +338,15 @@ def game_screen():
         starting_sound_played = False
 
     if pygame.Rect(ball.pos.x - ball.radius, ball.pos.y - ball.radius, ball.radius * 2, ball.radius * 2).colliderect(finish_line):
+        if current_level_index==2:
+            ending_sound_played = False
+            win_screen_display_time = pygame.time.get_ticks()
         if current_level_index < 3:
             if sounds_on:
                 sound_manager.play_sound('levelup_sound')
                 starting_sound_played = False
             current_level_index += 1
-        else:
-            win_screen_display_time = pygame.time.get_ticks()
+
 
         game_state = "win_level"
 
